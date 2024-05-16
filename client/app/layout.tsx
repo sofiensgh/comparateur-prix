@@ -1,6 +1,7 @@
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import FavoritesSidebar from '@/components/FavoritesSidebar'
+import SlideBar from '@/components/SlideBar'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <main className='max-w-10xl mx_auto'>
           <Navbar />
+          <SlideBar />
           <FavoritesSidebar />     
 
         {children}

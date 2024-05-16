@@ -19,14 +19,20 @@ const Navbar = () => {
  
   const navBarList=[
     {
-      title:"home",
+      title:"Home",
       link:"/",
   
     },
     { 
 
-      title:"categorie",
+      title:"Categorie",
       link:"/categories",
+  
+    },
+    { 
+
+      title:"About",
+      link:"/",
   
     },
   ]
@@ -85,8 +91,10 @@ const Navbar = () => {
         onClick={() => setDropdownMenu(!dropdownMenu)}/>
         {dropdownMenu && (
           <div className="absolute top-10 right-5 flex flex-col gap-2 p-3 rounded lg border bg-white text-base-bold custom-styled-div">
-            <Link href="/categories" className="hover:text-red-1">categorie</Link>
             <Link href="/" className="hover:text-red-1">home</Link>
+            <Link href="/" className="hover:text-red-1">about</Link>
+            <Link href="/categories" className="hover:text-red-1">categorie</Link>
+            <Link href="/categories" className="hover:text-red-1">contact</Link>
           </div>
         )}
         
