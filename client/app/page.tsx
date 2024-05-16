@@ -101,10 +101,10 @@ return(
       
         </div>*/}
 </section>
-<section className="trending-section">
+{/* <section className="trending-section">
 <h2 className="section-text">Informatique</h2>
 
-</section>
+</section> */}
  </>
 
 
