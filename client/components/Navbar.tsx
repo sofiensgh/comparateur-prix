@@ -32,7 +32,7 @@ const Navbar = () => {
     { 
 
       title:"About",
-      link:"/",
+      link:"/about",
   
     },
   ]
@@ -92,9 +92,8 @@ const Navbar = () => {
         {dropdownMenu && (
           <div className="absolute top-10 right-5 flex flex-col gap-2 p-3 rounded lg border bg-white text-base-bold custom-styled-div">
             <Link href="/" className="hover:text-red-1">home</Link>
-            <Link href="/" className="hover:text-red-1">about</Link>
+            <Link href="/about" className="hover:text-red-1">about</Link>
             <Link href="/categories" className="hover:text-red-1">categorie</Link>
-            <Link href="/categories" className="hover:text-red-1">contact</Link>
           </div>
         )}
         

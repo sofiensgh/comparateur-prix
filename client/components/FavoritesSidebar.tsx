@@ -16,7 +16,6 @@ const FavoritesSidebar = () => {
             <MdFavorite className="text-2xl text-[#33475b] -translate-x-3 group-hover:translate-x-12 transition-transform duration-200" />
         </div>
         <p className="text-sm font-semibold mt-1 text-[#33475b]">Favoris</p>
-        <p className="absolute top-1 right-2 bg-gray-600 text-white text-xs w-4 h-4 rounded-full items-center justify-center">0</p>
         </Link>
     </div>
 
