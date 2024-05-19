@@ -33,6 +33,10 @@ const scrapedDataSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  fournisseur: {
+    type: String,
+    default: "",
+  },
 });
 
 const ScrapedData = mongoose.model("ScrapedData", scrapedDataSchema);

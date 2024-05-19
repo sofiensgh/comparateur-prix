@@ -14,7 +14,7 @@ const ScrapedData = require("../../models/scrapedDataModel");
   });
 
   const page = await browser.newPage();
-  await page.goto("https://electrotounes.tn/informatique?page=1", {
+  await page.goto("https://electrotounes.tn/informatique?page=58", {
     waitUntil: "domcontentloaded",
   });
 
@@ -97,7 +97,8 @@ const ScrapedData = require("../../models/scrapedDataModel");
           ".product-image a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
           (el) => el.href.trim()
         );
-        const categorie = "Tapis";
+        const categorie = "Informatique";
+        const fournisseur = "Electro Tounes";
         // Create a new ScrapedData instance and save it to the database
         try {
           const newDataItem = new ScrapedData({
@@ -109,6 +110,7 @@ const ScrapedData = require("../../models/scrapedDataModel");
             img: img,
             productUrl: productUrl,
             categorie: categorie,
+            fournisseur: fournisseur,
           });
           await newDataItem.save();
           console.log("Saved to database:", newDataItem);
@@ -131,6 +133,7 @@ const ScrapedData = require("../../models/scrapedDataModel");
           img: "Error",
           productUrl: "Error",
           categorie: "Error",
+          fournisseur: "Error",
         });
       }
     }
