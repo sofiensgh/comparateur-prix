@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const scrapedDataSchema = new mongoose.Schema({
   title: {
     type: String,
-    default: '', // Empty string as default value if not defined or scraped
+    default: "", // Empty string as default value if not defined or scraped
   },
   price: {
     type: Number,
@@ -11,28 +11,30 @@ const scrapedDataSchema = new mongoose.Schema({
   },
   reference: {
     type: String,
-    default: '', // Empty string as default value if not defined or scraped
+    default: "", // Empty string as default value if not defined or scraped
   },
   description: {
     type: String,
-    default: '', // Empty string as default value if not defined or scraped
+    default: "", // Empty string as default value if not defined or scraped
   },
   availability: {
     type: String,
-    default: '', // Empty string as default value if not defined or scraped
+    default: "", // Empty string as default value if not defined or scraped
   },
   img: {
     type: String,
-    default: '', // Empty string as default value if not defined or scraped
+    default: "", // Empty string as default value if not defined or scraped
   },
-  productUrl:{
+  productUrl: {
     type: String,
-    default: '',
-
+    default: "",
   },
-  // Add more fields as needed
+  categorie: {
+    type: String,
+    default: "",
+  },
 });
 
-const ScrapedData = mongoose.model('ScrapedData', scrapedDataSchema);
+const ScrapedData = mongoose.model("ScrapedData", scrapedDataSchema);
 
 module.exports = ScrapedData;
