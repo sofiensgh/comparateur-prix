@@ -1,6 +1,6 @@
 const puppeteer = require("puppeteer");
 const mongoose = require("mongoose");
-const ScrapedData = require("../../models/scrapedDataModel");
+const TunisiaNetData = require("../../models/TunisiaNetModel");
 
 (async () => {
   // Connect to MongoDB
@@ -89,9 +89,10 @@ const ScrapedData = require("../../models/scrapedDataModel");
           ".wb-image-block a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
           (el) => el.href.trim()
         );
+        const categorie = "Informatique";
 
         // Create a new ScrapedData instance and save it to MongoDB
-        const newDataItem = new ScrapedData({
+        const newDataItem = new TunisiaNetData({
           title: title,
           price: price,
           reference: reference,
@@ -99,6 +100,10 @@ const ScrapedData = require("../../models/scrapedDataModel");
           availability: availability,
           img: img,
           productUrl: productUrl,
+          categorie: categorie,
+          fournisseur: TunisiaNetData.fournisseur,
+
+          
         });
         await newDataItem.save(); // Save to MongoDB
         console.log("Saved to database:", newDataItem);
@@ -113,6 +118,8 @@ const ScrapedData = require("../../models/scrapedDataModel");
           description: "Error",
           availability: "Error",
           img: "Error",
+          categorie:"Error",
+          fournisseur:"Error"
         });
       }
     }
@@ -132,4 +139,6 @@ const ScrapedData = require("../../models/scrapedDataModel");
 
   // Close the browser
   await browser.close();
+  mongoose.connection.close();
+
 })();

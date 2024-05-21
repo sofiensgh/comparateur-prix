@@ -1,6 +1,6 @@
 const puppeteer = require("puppeteer");
 const mongoose = require("mongoose");
-const ScrapedData = require("../../models/scrapedDataModel");
+const ElectroTounesData = require("../../models/ElectroTounesModel");
 
 (async () => {
   // Connect to MongoDB
@@ -97,10 +97,10 @@ const ScrapedData = require("../../models/scrapedDataModel");
           ".product-image a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
           (el) => el.href.trim()
         );
-        const categorie = "Tapis";
+        const categorie = "Telephonie";
         // Create a new ScrapedData instance and save it to the database
         try {
-          const newDataItem = new ScrapedData({
+          const newDataItem = new ElectroTounesData({
             title: title,
             price: price,
             reference: reference,

@@ -1,6 +1,6 @@
 const puppeteer = require("puppeteer");
 const mongoose = require("mongoose");
-const ScrapedData = require("../../models/scrapedDataModel");
+const ElectroTounesData = require("../../models/ElectroTounesModel");
 
 (async () => {
   // Connect to MongoDB
@@ -14,7 +14,7 @@ const ScrapedData = require("../../models/scrapedDataModel");
   });
 
   const page = await browser.newPage();
-  await page.goto("https://electrotounes.tn/informatique?page=58", {
+  await page.goto("https://electrotounes.tn/informatique?page=1", {
     waitUntil: "domcontentloaded",
   });
 
@@ -98,10 +98,9 @@ const ScrapedData = require("../../models/scrapedDataModel");
           (el) => el.href.trim()
         );
         const categorie = "Informatique";
-        const fournisseur = "Electro Tounes";
         // Create a new ScrapedData instance and save it to the database
         try {
-          const newDataItem = new ScrapedData({
+          const newDataItem = new ElectroTounesData({
             title: title,
             price: price,
             reference: reference,
@@ -110,7 +109,7 @@ const ScrapedData = require("../../models/scrapedDataModel");
             img: img,
             productUrl: productUrl,
             categorie: categorie,
-            fournisseur: fournisseur,
+            fournisseur: ElectroTounesData.fournisseur,
           });
           await newDataItem.save();
           console.log("Saved to database:", newDataItem);

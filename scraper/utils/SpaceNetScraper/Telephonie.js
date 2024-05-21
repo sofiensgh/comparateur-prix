@@ -1,6 +1,6 @@
 const puppeteer = require("puppeteer");
 const mongoose = require("mongoose");
-const ScrapedData = require("../../models/scrapedDataModel");
+const SpaceNetData = require("../../models/SpaceNetModel");
 
 (async () => {
   // Connect to MongoDB
@@ -84,9 +84,10 @@ const ScrapedData = require("../../models/scrapedDataModel");
           ".left-product a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
           (el) => el.href.trim()
         );
+        const categorie = "Telephonie";
 
         // Create a new ScrapedData instance and save it to MongoDB
-        const newDataItem = new ScrapedData({
+        const newDataItem = new SpaceNetData({
           title: title,
           price: price,
           reference: reference,
@@ -94,6 +95,9 @@ const ScrapedData = require("../../models/scrapedDataModel");
           availability: availability,
           img: img,
           productUrl: productUrl,
+          categorie: categorie,
+          fournisseur: SpaceNetData.fournisseur,
+
         });
         await newDataItem.save(); // Save to MongoDB
         console.log("Saved to database:", newDataItem);
@@ -107,6 +111,10 @@ const ScrapedData = require("../../models/scrapedDataModel");
           reference: "Error",
           description: "Error",
           availability: "Error",
+          img: "Error",
+          categorie:"Error", 
+          fournisseur:"Error",
+
         });
       }
     }
@@ -132,4 +140,6 @@ const ScrapedData = require("../../models/scrapedDataModel");
   console.log("Total items:", newData.length);
   // Close the browser
   await browser.close();
+  mongoose.connection.close();
+
 })();

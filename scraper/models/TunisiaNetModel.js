@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const scrapedDataSchema = new mongoose.Schema({
+const TunisiaNetDataSchema  = new mongoose.Schema({
   title: {
     type: String,
     default: "", // Empty string as default value if not defined or scraped
@@ -35,10 +35,15 @@ const scrapedDataSchema = new mongoose.Schema({
   },
   fournisseur: {
     type: String,
-    default: "",
   },
 });
 
-const ScrapedData = mongoose.model("ScrapedData", scrapedDataSchema);
+// Pre-save hook to set the constant value for fournisseur
+TunisiaNetDataSchema.pre('save', function(next) {
+  this.fournisseur = "Tunisia Net";
+  next();
+});
 
-module.exports = ScrapedData;
+const TunisiaNetData = mongoose.model("TunisiaNetData", TunisiaNetDataSchema );
+
+module.exports = TunisiaNetData;

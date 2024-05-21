@@ -2,7 +2,7 @@
 
 const puppeteer = require("puppeteer");
 const mongoose = require("mongoose");
-const ScrapedData = require("../../models/scrapedDataModel");
+const ElectroTounesData = require("../../models/ElectroTounesModel");
 
 (async () => {
   // Connect to MongoDB
@@ -37,7 +37,7 @@ const ScrapedData = require("../../models/scrapedDataModel");
           ".product-meta > .product-price-and-shipping > span.price",
           (el) => {
             const priceString = el.textContent.trim().replace(/\s/g, ""); // Remove spaces
-            const priceParts = priceString.split(","); // Split by comma
+            const priceParts = priceString.split(","); // Split by commas
             const wholePart = priceParts[0].replace(".", ""); // Remove dots in the whole part
             const decimalPart = priceParts[1]; // Keep the decimal part as is
             const formattedPrice = `${wholePart}.${decimalPart}`; // Combine whole and decimal parts
@@ -99,10 +99,10 @@ const ScrapedData = require("../../models/scrapedDataModel");
           ".product-image a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
           (el) => el.href.trim()
         );
-        const categorie = "Tapis";
+        const categorie = "Electromenager";
         // Create a new ScrapedData instance and save it to the database
         try {
-          const newDataItem = new ScrapedData({
+          const newDataItem = new ElectroTounesData({
             title: title,
             price: price,
             reference: reference,
@@ -111,6 +111,8 @@ const ScrapedData = require("../../models/scrapedDataModel");
             img: img,
             productUrl: productUrl,
             categorie: categorie,
+            fournisseur: ElectroTounesData.fournisseur,
+
           });
           await newDataItem.save();
           console.log("Saved to database:", newDataItem);
@@ -133,6 +135,8 @@ const ScrapedData = require("../../models/scrapedDataModel");
           img: "Error",
           productUrl: "Error",
           categorie: "Error",
+          fournisseur: "Error",
+
         });
       }
     }
