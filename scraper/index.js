@@ -73,6 +73,59 @@ app.get("/api/products", async (req, res) => {
   });
   
 
+
+// SEARCH PRODUCT BASED ON TITLE
+app.get("/api/fetchProducts", async (req, res) => {
+  try {
+    const { title } = req.query;
+    if (!title) {
+      return res.status(400).json({ message: "Title query parameter is required" });
+    }
+
+    console.log(`Received request for products with title: ${title}`);
+
+    // Perform a case-insensitive search using a regular expression
+    const regex = new RegExp(title, 'i');
+    const searchCriteria = { title: regex };
+
+    console.log(`Search criteria: ${JSON.stringify(searchCriteria)}`);
+
+    // Find products in all models based on the search criteria
+    const electroTounesProducts = await ElectroTounesData.find(searchCriteria);
+    const myTekProducts = await MyTekData.find(searchCriteria);
+    const spaceNetProducts = await SpaceNetData.find(searchCriteria);
+    const tunisiaNetProducts = await TunisiaNetData.find(searchCriteria);
+
+    // console.log(`ElectroTounes products: ${JSON.stringify(electroTounesProducts)}`);
+    // console.log(`MyTek products: ${JSON.stringify(myTekProducts)}`);
+    // console.log(`SpaceNet products: ${JSON.stringify(spaceNetProducts)}`);
+    // console.log(`TunisiaNet products: ${JSON.stringify(tunisiaNetProducts)}`);
+
+    // Combine all products
+    const products = [
+      ...electroTounesProducts,
+      ...myTekProducts,
+      ...spaceNetProducts,
+      ...tunisiaNetProducts,
+    ];
+
+    // console.log(`Combined products: ${JSON.stringify(products)}`);
+
+    if (products.length === 0) {
+      return res.status(404).json({ message: "No products found" });
+    }
+
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ message: "Server Error", error });
+  }
+});
+
+
+
+
+
   app.get('/api/categories/:categorie', async (req, res) => {
     try {
       const { categorie } = req.params;
@@ -125,6 +178,11 @@ const preprocessReference = (reference) => {
   }
 };
 
+
+
+
+
+// GET PRODUCT REFERENCE
 app.get('/api/products/by-reference', async (req, res) => {
   try {
     let { reference } = req.query;
@@ -170,6 +228,13 @@ app.get('/api/products/by-reference', async (req, res) => {
     res.status(500).json({ error: 'Error fetching products' });
   }
 });
+
+
+
+
+
+
+
 
 
 

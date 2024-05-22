@@ -1,7 +1,8 @@
 "use client"
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { use } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 
 interface Product {
@@ -17,16 +18,11 @@ interface Product {
 const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then((res) => res.json());
 
 export default function CategoryPage({ params }: { params: { categorie: string } }) {
-  const data = use(
-    fetch(`http://localhost:5000/api/categories/${params.categorie}`)
-      .then((res) => res.json())
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-        notFound();
-      })
-  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const { data, error } = useSWR(`http://localhost:5000/api/categories/${params.categorie}`, fetcher);
 
-  if (!data || data.length === 0) {
+  if (error) {
+    console.error('Error fetching data:', error);
     notFound();
   }
 
@@ -40,11 +36,26 @@ export default function CategoryPage({ params }: { params: { categorie: string }
     );
   }
 
+  const filteredData = data.filter((product: Product) =>
+    product.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (!filteredData.length) {
+    notFound();
+  }
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">{params.categorie} Products</h1>
+      <input
+        type="text"
+        placeholder="Search by title"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="mb-8 p-2 border border-gray-300 rounded-lg w-full"
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {data.map((product: Product) => (
+        {filteredData.map((product: Product) => (
           <Link href={`/products/${product._id}`} key={product._id}>
             <div className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
               <Image
