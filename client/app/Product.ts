@@ -1,6 +1,5 @@
 interface Product {
     _id: string;
-    id: string; // Assuming you have a separate id field
     title: string;
     name: string; // If you have a separate name field
     price: number;

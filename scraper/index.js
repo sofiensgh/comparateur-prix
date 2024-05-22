@@ -6,6 +6,8 @@ const MyTekData = require("./models/MyTekTtnModel");
 const SpaceNetData = require("./models/SpaceNetModel");
 
 const TunisiaNetData = require("./models/TunisiaNetModel");
+const bodyParser = require('body-parser');
+
 
 const connectDB = require("./config/db");
 require("dotenv").config();
@@ -46,33 +48,8 @@ app.get("/api/products", async (req, res) => {
     }
   });
   
-  
-
-
-
-
-
 
 // Define a route to fetch scraped data
-app.get("/api/electrotounes/:categorie", async (req, res) => {
-    try {
-      const { categorie } = req.params;
-      console.log(`Received request for category: ${categorie}`); // Log the received category
-  
-      const data = await ElectroTounesData.find({ categorie });
-      if (data.length === 0) {
-        console.log(`No data found for category: ${categorie}`); // Log if no data is found
-      } else {
-        console.log(`Found ${data.length} items for category: ${categorie}`); // Log the number of items found
-      }
-  
-      res.json(data);
-    } catch (error) {
-      console.error("Error fetching data:", error); // Log the error
-      res.status(500).json({ message: "Server Error", error });
-    }
-  });
-
   app.get("/api/product/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -96,64 +73,108 @@ app.get("/api/electrotounes/:categorie", async (req, res) => {
   });
   
 
-  app.get("/api/mytek/:categorie", async (req, res) => {
+  app.get('/api/categories/:categorie', async (req, res) => {
     try {
       const { categorie } = req.params;
       console.log(`Received request for category: ${categorie}`); // Log the received category
   
-      const data = await MyTekData.find({ categorie });
-      if (data.length === 0) {
+      const dataElectroTounes = await ElectroTounesData.find({ categorie }).limit(4);
+      const dataMyTek = await MyTekData.find({ categorie }).limit(4);
+      const dataSpaceNet = await SpaceNetData.find({ categorie }).limit(4);
+      const dataTunisiaNet = await TunisiaNetData.find({ categorie }).limit(4);
+  
+      const combinedData = [
+        ...dataElectroTounes,
+        ...dataMyTek,
+        ...dataSpaceNet,
+        ...dataTunisiaNet
+      ];
+  
+      if (combinedData.length === 0) {
         console.log(`No data found for category: ${categorie}`); // Log if no data is found
+        return res.status(404).json({ message: "No data found for this category" });
       } else {
-        console.log(`Found ${data.length} items for category: ${categorie}`); // Log the number of items found
+        console.log(`Found ${combinedData.length} items for category: ${categorie}`); // Log the number of items found
       }
   
-      res.json(data);
+      res.json(combinedData);
     } catch (error) {
       console.error("Error fetching data:", error); // Log the error
       res.status(500).json({ message: "Server Error", error });
     }
   });
+  // Import necessary modules or libraries for fuzzy search or string matching if needed
 
-  app.get("/api/spacenet/:categorie", async (req, res) => {
-    try {
-      const { categorie } = req.params;
-      console.log(`Received request for category: ${categorie}`); // Log the received category
-  
-      const data = await SpaceNetData.find({ categorie });
-      if (data.length === 0) {
-        console.log(`No data found for category: ${categorie}`); // Log if no data is found
-      } else {
-        console.log(`Found ${data.length} items for category: ${categorie}`); // Log the number of items found
-      }
-  
-      res.json(data);
-    } catch (error) {
-      console.error("Error fetching data:", error); // Log the error
-      res.status(500).json({ message: "Server Error", error });
+
+
+
+
+
+
+
+
+  // Function to preprocess the reference
+const preprocessReference = (reference) => {
+  // Check if the reference contains brackets
+  if (reference.startsWith('[') && reference.endsWith(']')) {
+    // Remove the brackets
+    return reference.slice(1, -1);
+  } else {
+    // If no brackets, return the reference as is
+    return reference;
+  }
+};
+
+app.get('/api/products/by-reference', async (req, res) => {
+  try {
+    let { reference } = req.query;
+
+    if (!reference) {
+      return res.status(400).json({ error: 'Reference is required' });
     }
-  });
 
-  app.get("/api/tunisianet/:categorie", async (req, res) => {
-    try {
-      const { categorie } = req.params;
-      console.log(`Received request for category: ${categorie}`); // Log the received category
-  
-      const data = await TunisiaNetData.find({ categorie });
-      if (data.length === 0) {
-        console.log(`No data found for category: ${categorie}`); // Log if no data is found
-      } else {
-        console.log(`Found ${data.length} items for category: ${categorie}`); // Log the number of items found
-      }
-  
-      res.json(data);
-    } catch (error) {
-      console.error("Error fetching data:", error); // Log the error
-      res.status(500).json({ message: "Server Error", error });
+    console.log(`Fetching products with reference: ${reference}`);
+
+    // Preprocess the reference
+    reference = preprocessReference(reference);
+
+    // Array to store products from all suppliers
+    let allProducts = [];
+
+    // Perform a separate query for each supplier model
+    const suppliers = [
+      { model: ElectroTounesData, name: 'ElectroTounesData' },
+      { model: MyTekData, name: 'MyTekData' },
+      { model: SpaceNetData, name: 'SpaceNetData' },
+      { model: TunisiaNetData, name: 'TunisiaNetData' }
+    ];
+
+    for (const { model, name } of suppliers) {
+      const products = await model.find({
+        reference: { $regex: new RegExp(reference, 'i') }
+      });
+      allProducts = allProducts.concat(products);
+      console.log(`Found ${products.length} products for ${name}`);
     }
-  });
+
+    if (allProducts.length === 0) {
+      console.log('No products found');
+      return res.status(404).json({ error: 'No products found' });
+    }
+
+    console.log(`Found total ${allProducts.length} products`);
+
+    res.json(allProducts);
+  } catch (error) {
+    console.error('Error fetching products by reference:', error);
+    res.status(500).json({ error: 'Error fetching products' });
+  }
+});
 
 
+
+
+  app.use(bodyParser.json());
 
 // Start the server
 app.listen(PORT, () => {
