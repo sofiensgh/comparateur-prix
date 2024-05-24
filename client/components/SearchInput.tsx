@@ -1,15 +1,28 @@
-"use client"
-import React from 'react';
+"use client";
+import React from "react";
+import { useRouter } from "next/navigation";
 
 interface SearchInputProps {
   searchQuery: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSearchSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-const SearchInput: React.FC<SearchInputProps> = ({ searchQuery, onSearchChange, onSearchSubmit }) => {
+const SearchInput: React.FC<SearchInputProps> = ({
+  searchQuery,
+  onSearchChange,
+}) => {
+  const router = useRouter();
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    router.push(`/resultat?title=${searchQuery}`);
+  };
+
   return (
-    <form onSubmit={onSearchSubmit} className="relative block w-full sm:max-w-md">
+    <form
+      onSubmit={handleSearchSubmit}
+      className="relative block w-full sm:max-w-md"
+    >
       <div className="flex items-center rounded-full bg-gray-200 px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 transition duration-300">
         <svg
           className="w-4 h-4 text-gray-500"

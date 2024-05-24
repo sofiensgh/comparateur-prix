@@ -1,9 +1,8 @@
 "use client";
-// Imports related to client-side functionality
-import { useState, useEffect } from 'react';
-import useSWR from 'swr';
-import Link from 'next/link';
-import ProductCards from "@/components/ProductCards"; // Import the ProductCard component
+import { useState, useEffect } from "react";
+import useSWR from "swr";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import ProductCards from "@/components/ProductCards";
 
 interface Product {
   _id: string;
@@ -12,16 +11,12 @@ interface Product {
   title: string;
   price: number;
   fournisseur: string;
-  categorie:string;
+  categorie: string;
   rate: number;
 }
 
-interface ProductCardProps {
-  product: Product;
-}
-
 const fetcher = (url: string) =>
-  fetch(url, { cache: 'no-store' })
+  fetch(url, { cache: "no-store" })
     .then((res) => {
       if (!res.ok) {
         throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -29,13 +24,23 @@ const fetcher = (url: string) =>
       return res.json();
     })
     .catch((err) => {
-      console.error('Error fetching data:', err);
+      console.error("Error fetching data:", err);
       throw err;
     });
 
-export default function CategoryPage({ params }: { params: { categorie: string } }) {
+export default function CategoryPage({
+  params,
+}: {
+  params: { categorie: string };
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const pageParam = searchParams.get("page");
+  const [currentPage, setCurrentPage] = useState(
+    pageParam ? parseInt(pageParam) : 1
+  );
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 12;
 
   const { data, error } = useSWR(
@@ -43,14 +48,18 @@ export default function CategoryPage({ params }: { params: { categorie: string }
     fetcher,
     { onSuccess: () => setLoading(false) }
   );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    router.push(`${pathname}?page=${page}`);
+  };
+
   useEffect(() => {
-    setLoading(true);
-    const pageParam = new URLSearchParams(window.location.search).get('page');
     setCurrentPage(pageParam ? parseInt(pageParam) : 1);
-  }, [params.categorie, currentPage]);
+  }, [params.categorie, pageParam]);
 
   if (error) {
-    console.error('Error fetching data:', error);
+    console.error("Error fetching data:", error);
     return <div>Error loading data</div>;
   }
 
@@ -59,12 +68,19 @@ export default function CategoryPage({ params }: { params: { categorie: string }
   }
 
   if (!Array.isArray(data)) {
-    console.error('Data is not an array:', data);
+    console.error("Data is not an array:", data);
     return <div>Error: Unexpected data format</div>;
   }
 
   const totalPages = Math.ceil(data.length / productsPerPage);
-  const currentPageData = data.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage);
+  const currentPageData = data.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  );
+
+  // Calculate the range of pages to display in pagination
+  const startPage = Math.max(1, currentPage - 1);
+  const endPage = Math.min(totalPages, startPage + 2);
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -91,18 +107,37 @@ export default function CategoryPage({ params }: { params: { categorie: string }
                   ))}
                 </div>
                 <div className="mt-8 flex justify-center space-x-2">
-                  {Array.from({ length: totalPages }, (_, index) => (
-                    <Link href={`/categories/${params.categorie}?page=${index + 1}`} key={index}>
+                  {Array.from(
+                    { length: endPage - startPage + 1 },
+                    (_, index) => (
+                      <button
+                        key={startPage + index}
+                        className={`px-4 py-2 border border-gray-300 rounded-lg ${
+                          currentPage === startPage + index
+                            ? "bg-gray-300"
+                            : "bg-white"
+                        }`}
+                        onClick={() => handlePageChange(startPage + index)}
+                      >
+                        {startPage + index}
+                      </button>
+                    )
+                  )}
+                  {totalPages > endPage && (
+                    <>
+                      <span>...</span>
                       <button
                         className={`px-4 py-2 border border-gray-300 rounded-lg ${
-                          currentPage === index + 1 ? 'bg-gray-300' : 'bg-white'
+                          currentPage === totalPages
+                            ? "bg-gray-300"
+                            : "bg-white"
                         }`}
-                        onClick={() => setCurrentPage(index + 1)}
+                        onClick={() => handlePageChange(totalPages)}
                       >
-                        {index + 1}
+                        {totalPages}
                       </button>
-                    </Link> 
-                  ))}
+                    </>
+                  )}
                 </div>
                 <div className="mt-4 text-center text-gray-600">
                   Page {currentPage} of {totalPages}
