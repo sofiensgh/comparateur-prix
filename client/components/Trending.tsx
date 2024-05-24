@@ -1,18 +1,40 @@
 "use client"
 import React from "react";
+import { useState, useEffect } from 'react';
+
 import Slider, { Settings } from "react-slick";
 import Container from "./Container";
-import ProductCard from "./ProductCard";
+import ProductCards from "./ProductCards";
 import { data } from "@/app/utils/data";
 import "slick-carousel/slick/slick.css";
 import NextArrow from "./NextArrow";
 import PrevArrow from "./PrevArrow";
+import axios from "axios";
+
+const [products, setProducts] = useState<Product[]>([]);
+const [searchQuery, setSearchQuery] = useState("");
+const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+
+useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get<Product[]>('http://localhost:5000/api/products');
+      console.log(response.data);
+      setProducts(response.data);
+      setFilteredProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  fetchProducts();
+}, []);
 
 
-const { products } = data;
-
-
-const Trending: React.FC = () => 
+interface ProductCardProps {
+    product: Product;
+  }
+const Trending: React.FC<ProductCardProps> = ({product}) => 
   {  const settings: Settings = {
         infinite: true, 
         speed: 500,
@@ -54,10 +76,9 @@ const Trending: React.FC = () =>
         <Container>
             <div>
                 <Slider {...settings}>
-                    {products.map((product) => (
-                        <div key={product.id} className="px-2">
-                            <ProductCard product={product} />
-                        </div>
+                {filteredProducts.map((product) => (
+                        <ProductCards key={product._id} product={product} />
+                        
                     ))}
                 </Slider>
             </div>

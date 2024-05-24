@@ -1,29 +1,21 @@
 "use client";
-import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CiHeart } from "react-icons/ci";
-import { MdFavoriteBorder } from "react-icons/md";
 import { BsArrowsFullscreen } from "react-icons/bs";
 import { MdOutlineStarPurple500 } from 'react-icons/md';
-import { AiOutlineShopping } from "react-icons/ai";
-import React, { ReactNode } from 'react';
+import React from 'react';
 
-// interface Product {
-//   image?: string | StaticImport;
-//   img?: string;
-//   name?: ReactNode;
-//   title?: string;
-//   price: number;
-//   currency: string;
-//   id: string;
-//   brand?: string;
-//   rate?: number;
-//   availability?: string;
-//   reference?: string;
-//   productUrl?: string;
-//   // Add other properties of the product if needed
-// }
+interface Product {
+  _id: string;
+  img: string;
+  image: string;
+  title: string;
+  price: number;
+  fournisseur: string;
+  categorie:string;
+  rate: number;
+}
 
 interface ProductCardProps {
   product: Product;
@@ -31,64 +23,40 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
-    <>
-      <div className="bg-gray-200 w-full relative group border-[1px] border-gray-300 hover:shadow-lg duration-200 shadow-gray-600 rounded-lg overflow-hidden group hover:bg-white hover:shadow-md hover:shadow-black/25 transition-all">
-        <div className="w-full h-80 flex items-center justify-center bg-white overflow-hidden">
-          <div className="relative">
-            <Link href={`/products/${product._id}`}>
-              <Image
-                src={product.img || product.image || '/path/to/placeholder-image.jpg'}
-                alt={product.title || product.name || 'Product Image'}
-                width={700}
-                height={700}
-                className="w-72 h-72 object-contain rounded"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/path/to/placeholder-image.jpg'; // Path to a local placeholder image
-                }}
-              />
-            </Link>
-            <div className="absolute bottom-0 flex items-center gap-5 justify-center translate-y-[150%] group-hover:-translate-y-2 transition-transform duration-300">
-              <Link
-                href={`/products/${product._id}`}
-                className="bg-gray-800 text-gray-200 px-4 py-2 text-xs rounded-full flex items-center gap-1 hover:bg-gray-950 hover:text-white duration-200">
-                <span>
-                  <CiHeart />
-                </span>
-                Favoris
-              </Link>
-              <Link
-                href={`/products/${product._id}`}
-                className="bg-gray-800 text-gray-200 px-4 py-2 text-xs rounded-full flex items-center gap-1 hover:bg-gray-950 hover:text-white duration-200">
-                <span>
-                  <BsArrowsFullscreen />
-                </span>
-                Voir Info
-              </Link>
+    <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 w-64">
+      <Link href={`/products/${product._id}`} className="block cursor-pointer">
+        <div className="relative w-full h-56 bg-gray-200">
+          <Image
+            src={product.img || product.image || '/path/to/placeholder-image.jpg'}
+            alt={product.title || 'Product Image'}
+            layout="fill"
+            objectFit="cover"
+            className="transition-transform duration-300 hover:scale-105"
+          />
+        </div>
+        <div className="p-2">
+          <h2 className="text-sm font-semibold text-gray-800 truncate">{product.title}</h2>
+          <p className="text-gray-600 text-xs mt-1 truncate">categorie <span className="font-semibold text-primeColor">{product.categorie}</span></p>
+          <div className="flex items-center mt-1">
+            {/* <MdOutlineStarPurple500 className="text-yellow-500 text-lg" /> */}
+            <span className="ml-1 text-gray-600 text-sm">offres</span>
+          </div>
+          <div className="flex items-center justify-between mt-1">
+          <p className="text-gray-600 truncate">à partir de</p>
+            <span className="text-md font-bold text-gray-800"> {product.price} DT</span>
+            <div className="flex space-x-2">
+              <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
+                <CiHeart size={20} />
+              </button>
+              <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
+                <BsArrowsFullscreen size={20} />
+              </button>
             </div>
           </div>
         </div>
-        <Link
-                href={`/products/${product._id}`}>
-        <div className="max-w-80 py-6 flex flex-col gap-1 px-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-primeColor font-bold truncate overflow-hidden">{(product.title as string)?.split(' ').slice(0, 3).join(' ') || product.title || 'No Name'}</h2>
-            <div className="flex items-center gap-1">
-              <p className="text-[#767676] text-xs ">{product.price},OOO DT</p>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-                  <p className="text-[#767676] text-sm truncate overflow-hidden">produit par <span className="font-semibold text-primeColor">{product.fournisseur}</span></p> 
-                  <div className="flex items-center gap-1">
-                    <MdOutlineStarPurple500 className="text-lg text-yellow-500"/>
-                    <span className="font-meduim text-sm">{product.rate}</span>
-                  </div>
-                </div>
-        </div>
-        </Link>
+      </Link>
     </div>
-    </>
-
-    );
+  );
 };
 
 export default ProductCard;

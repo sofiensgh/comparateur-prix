@@ -29,10 +29,10 @@ app.use(express.json());
 // FETCH ALL PRODUCTS
 app.get("/api/products", async (req, res) => {
     try {
-      const electroTounesProducts = await ElectroTounesData.find().limit(2);
-      const myTekProducts = await MyTekData.find().limit(2);
-      const spaceNetProducts = await SpaceNetData.find().limit(2);
-      const tunisiaNetProducts = await TunisiaNetData.find().limit(2);
+      const electroTounesProducts = await ElectroTounesData.find().limit(10);
+      const myTekProducts = await MyTekData.find().limit(10);
+      const spaceNetProducts = await SpaceNetData.find().limit(10);
+      const tunisiaNetProducts = await TunisiaNetData.find().limit(10);
   
       const allProducts = [
         ...electroTounesProducts,
@@ -47,6 +47,46 @@ app.get("/api/products", async (req, res) => {
       res.status(500).json({ message: "Server Error", error });
     }
   });
+  //pagination 
+
+app.get("/api/productslist", async (req, res) => {
+  try {
+    const { page = 1, limit = 10, categorie } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    const skip = (pageNumber - 1) * limitNumber;
+    console.log(`Pagination parameters - Page: ${pageNumber}, Limit: ${limitNumber}, Skip: ${skip}`);
+
+    let query = {};
+
+    // Check if a category is specified, and add it to the query if so
+    if (categorie) {
+      query = { categorie: categorie };
+    }
+
+    // Fetch products based on the query and pagination parameters
+    const electroTounesProducts = await ElectroTounesData.find(query).skip(skip).limit(limitNumber);
+    const myTekProducts = await MyTekData.find(query).skip(skip).limit(limitNumber);
+    const spaceNetProducts = await SpaceNetData.find(query).skip(skip).limit(limitNumber);
+    const tunisiaNetProducts = await TunisiaNetData.find(query).skip(skip).limit(limitNumber);
+
+    const allProducts = [
+      ...electroTounesProducts,
+      ...myTekProducts,
+      ...spaceNetProducts,
+      ...tunisiaNetProducts,
+    ];
+
+    console.log("Fetched products:", allProducts.length);
+    res.json(allProducts);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).json({ message: "Server Error", error });
+  }
+});
+
+  
   
 
 // Define a route to fetch scraped data
@@ -75,7 +115,7 @@ app.get("/api/products", async (req, res) => {
 
 
 // SEARCH PRODUCT BASED ON TITLE
-app.get("/api/fetchProducts", async (req, res) => {
+app.get("/api/searchProducts", async (req, res) => {
   try {
     const { title } = req.query;
     if (!title) {
@@ -131,10 +171,10 @@ app.get("/api/fetchProducts", async (req, res) => {
       const { categorie } = req.params;
       console.log(`Received request for category: ${categorie}`); // Log the received category
   
-      const dataElectroTounes = await ElectroTounesData.find({ categorie }).limit(4);
-      const dataMyTek = await MyTekData.find({ categorie }).limit(4);
-      const dataSpaceNet = await SpaceNetData.find({ categorie }).limit(4);
-      const dataTunisiaNet = await TunisiaNetData.find({ categorie }).limit(4);
+      const dataElectroTounes = await ElectroTounesData.find({ categorie }).limit(50);
+      const dataMyTek = await MyTekData.find({ categorie }).limit(50);
+      const dataSpaceNet = await SpaceNetData.find({ categorie }).limit(50);
+      const dataTunisiaNet = await TunisiaNetData.find({ categorie }).limit(50);
   
       const combinedData = [
         ...dataElectroTounes,

@@ -10,8 +10,10 @@ export type PriceHistoryItem = {
     _id?: string;
     url: string;
     currency: string;
+    img:string;
     image: string;
     title: string;
+    price:number;
     currentPrice: number;
     originalPrice: number;
     priceHistory: PriceHistoryItem[] | [];
@@ -20,6 +22,9 @@ export type PriceHistoryItem = {
     averagePrice: number;
     discountRate: number;
     description: string;
+    productUrl: string;
+    categorie: string;
+    fournisseur: string;
     category: string;
     reviewsCount: number;
     stars: number;

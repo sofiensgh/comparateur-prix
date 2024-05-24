@@ -24,17 +24,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
       <body className={inter.className}>
         <main className='max-w-10xl mx_auto'>
-          <Navbar />
+          <Navbar />          
           <SlideBar />
           <FavoritesSidebar />     
 
         {children}
-      </main>
-      <footer>
+      
+      
       <Footer />
-      </footer>
+      
+      </main>
       </body>
       
     </html>

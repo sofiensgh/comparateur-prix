@@ -1,33 +1,50 @@
-"use client";
-
-import Image from "next/image";
-import { Product } from "../../types";
+"use client"
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Product } from '../../../types';
+import OfferCard from '@/components/OfferCards';
 
 interface ProductProps {
   params: { productId: string };
 }
 
-async function fetchProductDetails(productId: string): Promise<Product | null> {
-  try {
-    const res = await fetch(`http://localhost:5000/api/product/${productId}`);
-    if (!res.ok) {
+function fetchProductDetails(productId: string): Promise<Product | null> {
+  return fetch(`http://localhost:5000/api/product/${productId}`)
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return res.json();
+    })
+    .catch((error) => {
+      console.error('Error fetching product details:', error);
       return null;
-    }
-    const product: Product = await res.json();
-    return product;
-  } catch (error) {
-    console.error('Error fetching product details:', error);
-    return null;
-  }
+    });
 }
 
-export default async function ProductDetails({ params }: ProductProps) {
+export default function ProductDetails({ params }: ProductProps) {
   const { productId } = params;
-  const product = await fetchProductDetails(productId);
+  const [product, setProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    fetchProductDetails(productId).then((data) => {
+      setProduct(data);
+    });
+  }, [productId]);
 
   if (!product) {
     return <h1>Data not found</h1>;
   }
+
+  // Use local image paths for each fournisseur
+  const otherProductOffers = [
+    { _id: '1', img: '../../../public/fournisseur/mytek.png', title: 'Offer 1', price: 100, availability: true, fournisseur: 'mytek', link: '/offer1' },
+    { _id: '2', img: '../../../public/fournisseur/spacenet.png', title: 'Offer 2', price: 150, availability: false, fournisseur: 'spacenet', link: '/offer2' },
+    { _id: '3', img: '../../../public/fournisseur/electrotounes.png', title: 'Offer 2', price: 150, availability: false, fournisseur: 'electrotounes', link: '/offer2' },
+    { _id: '4', img: '../../../public/fournisseur/tunisianet.png', title: 'Offer 2', price: 150, availability: false, fournisseur: 'tunisianet', link: '/offer2' },
+    // Add more offers as needed
+  ];
 
   return (
     <div className="container mx-auto py-20">
@@ -56,6 +73,9 @@ export default async function ProductDetails({ params }: ProductProps) {
       </div>
       <div className="bg-white shadow-md rounded-lg p-6 md:p-10 mt-10">
         <h2 className="text-xl font-bold mb-4">Same product in other websites</h2>
+        {otherProductOffers.map((offer, index) => (
+          <OfferCard key={index} offer={offer} />
+        ))}
         {/* Render other product listings */}
       </div>
     </div>
