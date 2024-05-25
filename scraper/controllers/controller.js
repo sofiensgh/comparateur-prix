@@ -4,13 +4,27 @@ const ElectroTounesData = require("../models/ElectroTounesModel");
 const MyTekData = require("../models/MyTekTtnModel");
 const SpaceNetData = require("../models/SpaceNetModel");
 const TunisiaNetData = require("../models/TunisiaNetModel");
+const stringSimilarity = require("string-similarity");
 
 const preprocessReference = (reference) => {
-  if (reference.startsWith("[") && reference.endsWith("]")) {
-    return reference.slice(1, -1);
-  } else {
-    return reference;
+  let processedReference = reference;
+
+  if (
+    processedReference.startsWith("[") &&
+    processedReference.endsWith("]") &&
+    processedReference.endsWith(".")
+  ) {
+    processedReference = processedReference.slice(1, -2);
   }
+  if (processedReference.startsWith("[") && processedReference.endsWith("]")) {
+    processedReference = processedReference.slice(1, -1);
+  }
+
+  if (processedReference.endsWith(".")) {
+    processedReference = processedReference.slice(0, -1);
+  }
+
+  return processedReference;
 };
 
 exports.getAllProducts = async (req, res) => {
@@ -85,12 +99,101 @@ exports.getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.json(product);
+    const reference = preprocessReference(product.reference);
+    console.log(`Searching for products with reference: ${reference}`);
+
+    const similarProducts = await Promise.all([
+      ElectroTounesData.find({ reference }),
+      MyTekData.find({ reference }),
+      SpaceNetData.find({ reference }),
+      TunisiaNetData.find({ reference }),
+    ]);
+
+    // Flatten the array of arrays
+    const allSimilarProducts = similarProducts.flat();
+
+    res.json({ product, similarProducts: allSimilarProducts });
   } catch (error) {
     console.error("Error fetching product:", error);
     res.status(500).json({ message: "Server Error", error });
   }
 };
+
+exports.getStock = async (req, res) => {
+  try {
+    const { reference } = req.params;
+    console.log(
+      `Received request for availability of product ID: ${reference}`
+    );
+
+    // First, fetch the product by ID to get its reference
+    let product =
+      (await ElectroTounesData.findById(reference)) ||
+      (await MyTekData.findById(reference)) ||
+      (await SpaceNetData.findById(reference)) ||
+      (await TunisiaNetData.findById(reference));
+
+    if (!product) {
+      console.log(`No product found with ID: ${reference}`);
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    console.log(`Product found: ${product.title}`);
+
+    const productReference = preprocessReference(product.reference);
+    console.log(`Normalized product reference: ${productReference}`);
+
+    // Now, search for the product by reference in all stores
+    const stores = [
+      { name: "Electro Tounes", model: ElectroTounesData },
+      { name: "MyTek", model: MyTekData },
+      { name: "SpaceNet", model: SpaceNetData },
+      { name: "TunisiaNet", model: TunisiaNetData },
+    ];
+
+    const exactMatchPromises = stores.map(async (store) => {
+      const storeProduct = await store.model.findOne({
+        reference: productReference,
+      });
+
+      if (storeProduct) {
+        console.log(
+          `Exact product found in store: ${store.name}, Availability: ${storeProduct.availability}`
+        );
+        return {
+          store: store.name,
+          availability: storeProduct.availability,
+          product: storeProduct,
+        };
+      } else {
+        console.log(`Product not found in store: ${store.name}`);
+        return null;
+      }
+    });
+
+    const exactMatches = await Promise.all(exactMatchPromises);
+    const availableProducts = exactMatches.filter((result) => result !== null);
+
+    if (availableProducts.length === 0) {
+      console.log(
+        `No exact match found for product reference: ${productReference}`
+      );
+      return res
+        .status(404)
+        .json({ message: "Exact match not found in any store" });
+    }
+
+    console.log(
+      `Product availability in stores: ${JSON.stringify(availableProducts)}`
+    );
+
+    res.json(availableProducts);
+  } catch (error) {
+    console.error("Error fetching product availability:", error);
+    res.status(500).json({ message: "Server Error", error });
+  }
+};
+
 // search for product
 exports.searchProducts = async (req, res) => {
   try {
@@ -103,11 +206,13 @@ exports.searchProducts = async (req, res) => {
       // Split the title into individual words
       const keywords = title.split(/\s+/);
       // Create an array to hold regex patterns for each keyword
-      const regexPatterns = keywords.map(word => new RegExp(word, 'i'));
+      const regexPatterns = keywords.map((word) => new RegExp(word, "i"));
       // Construct a regex pattern that matches all keywords in any order
-      const regex = regexPatterns.map(pattern => `(?=.*${pattern.source})`).join('');
+      const regex = regexPatterns
+        .map((pattern) => `(?=.*${pattern.source})`)
+        .join("");
       // Create the final regex pattern for the title search
-      searchCriteria.title = new RegExp(regex, 'i');
+      searchCriteria.title = new RegExp(regex, "i");
     }
 
     if (categorie) {
@@ -138,10 +243,6 @@ exports.searchProducts = async (req, res) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
-
-
-
-
 
 exports.getProductsByCategory = async (req, res) => {
   try {

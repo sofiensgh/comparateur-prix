@@ -10,5 +10,6 @@ router.get("/product/:id", productController.getProductById);
 router.get("/searchProducts", productController.searchProducts);
 router.get("/categories/:categorie", productController.getProductsByCategory);
 router.get("/products/by-reference", productController.getProductsByReference);
+router.get("/:id/availability", productController.getStock);
 
 module.exports = router;
