@@ -12,7 +12,9 @@ interface Product {
   fournisseur: string;
   categorie: string;
   rate: number;
+  availability: string; // Add availability field to the Product interface
 }
+
 
 const ResultatPage = () => {
   const router = useRouter();
@@ -42,7 +44,7 @@ const ResultatPage = () => {
         const data = await response.json();
         setSearchResults(data);
       } catch (error) {
-        setError(error.message);
+        console.log("error")
       } finally {
         setLoading(false);
       }
@@ -73,13 +75,15 @@ const ResultatPage = () => {
 
   return (
     <div className="container mx-auto px-4 sm:px-8">
-      <h1 className="text-2xl font-bold my-4">Search Results for "{title}"</h1>
+      <h1 className="text-2xl font-bold my-4 text-center">Search Results for "{title}"</h1>
       {loading && <p className="text-center mt-4">Loading...</p>}
       {error && <p className="text-center mt-4 text-red-600">Error: {error}</p>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {searchResults.map((product: Product) => (
-          <ProductCards key={product._id} product={product} />
-        ))}
+      <div className="flex justify-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {searchResults.map((product: Product) => (
+            <ProductCards key={product._id} product={product} />
+          ))}
+        </div>
       </div>
       {searchResults.length === 0 && !loading && !error && (
         <p className="text-center mt-4">No products found</p>

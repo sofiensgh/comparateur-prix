@@ -91,43 +91,35 @@ exports.getProductById = async (req, res) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
-
+// search for product
 exports.searchProducts = async (req, res) => {
   try {
-    const { title, page = 1, limit = 12, categorie } = req.query;
-    if (!title) {
-      return res
-        .status(400)
-        .json({ message: "Title query parameter is required" });
-    }
+    const { title, categorie } = req.query;
 
     console.log(`Received request for products with title: ${title}`);
 
-    const regex = new RegExp(title, "i");
-    let searchCriteria = { title: regex };
+    let searchCriteria = {};
+    if (title) {
+      // Split the title into individual words
+      const keywords = title.split(/\s+/);
+      // Create an array to hold regex patterns for each keyword
+      const regexPatterns = keywords.map(word => new RegExp(word, 'i'));
+      // Construct a regex pattern that matches all keywords in any order
+      const regex = regexPatterns.map(pattern => `(?=.*${pattern.source})`).join('');
+      // Create the final regex pattern for the title search
+      searchCriteria.title = new RegExp(regex, 'i');
+    }
 
     if (categorie) {
-      searchCriteria = { ...searchCriteria, categorie: categorie };
+      searchCriteria.categorie = categorie;
     }
 
     console.log(`Search criteria: ${JSON.stringify(searchCriteria)}`);
 
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-    const skip = (pageNumber - 1) * limitNumber;
-
-    const electroTounesProducts = await ElectroTounesData.find(searchCriteria)
-      .skip(skip)
-      .limit(limitNumber);
-    const myTekProducts = await MyTekData.find(searchCriteria)
-      .skip(skip)
-      .limit(limitNumber);
-    const spaceNetProducts = await SpaceNetData.find(searchCriteria)
-      .skip(skip)
-      .limit(limitNumber);
-    const tunisiaNetProducts = await TunisiaNetData.find(searchCriteria)
-      .skip(skip)
-      .limit(limitNumber);
+    const electroTounesProducts = await ElectroTounesData.find(searchCriteria);
+    const myTekProducts = await MyTekData.find(searchCriteria);
+    const spaceNetProducts = await SpaceNetData.find(searchCriteria);
+    const tunisiaNetProducts = await TunisiaNetData.find(searchCriteria);
 
     const products = [
       ...electroTounesProducts,
@@ -146,6 +138,10 @@ exports.searchProducts = async (req, res) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
+
+
+
+
 
 exports.getProductsByCategory = async (req, res) => {
   try {

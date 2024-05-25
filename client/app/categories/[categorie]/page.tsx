@@ -13,7 +13,9 @@ interface Product {
   fournisseur: string;
   categorie: string;
   rate: number;
+  availability: string; // Add availability field to the Product interface
 }
+
 
 const fetcher = (url: string) =>
   fetch(url, { cache: "no-store" })
