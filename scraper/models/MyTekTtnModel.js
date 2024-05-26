@@ -41,6 +41,8 @@ const MytekDataSchema  = new mongoose.Schema({
 // Pre-save hook to set the constant value for fournisseur
 MytekDataSchema.pre('save', function(next) {
   this.fournisseur = "MyTek";
+  this.reference = this.reference.replace(/[^a-zA-Z0-9]/g, ''); // Remove all non-alphanumeric characters
+
   next();
 });
 

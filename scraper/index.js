@@ -8,6 +8,7 @@ const SpaceNetData = require("./models/SpaceNetModel");
 const TunisiaNetData = require("./models/TunisiaNetModel");
 const bodyParser = require("body-parser");
 const productRoutes = require("./routes/route");
+const cookieParser = require("cookie-parser");
 
 const connectDB = require("./config/db");
 require("dotenv").config();
@@ -22,8 +23,18 @@ app.use(cors());
 
 // Middleware to parse JSON
 app.use(express.json());
+app.use(cookieParser()); // Make sure this is used before the routes
+
+
+
 
 app.use("/api", productRoutes);
+
+// user Routes
+const userRoutes = require("./routes/userRoutes");
+
+app.use("/api/users", userRoutes);
+
 
 app.use(bodyParser.json());
 

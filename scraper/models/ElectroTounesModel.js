@@ -41,6 +41,7 @@ const scrapedDataSchema = new mongoose.Schema({
 // Pre-save hook to set the constant value for fournisseur
 scrapedDataSchema.pre('save', function(next) {
   this.fournisseur = "Electro Tounes";
+  this.reference = this.reference.replace(/[^a-zA-Z0-9]/g, ''); // Remove all non-alphanumeric characters
   next();
 });
 

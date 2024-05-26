@@ -41,6 +41,8 @@ const SpaceNetDataSchema  = new mongoose.Schema({
 // Pre-save hook to set the constant value for fournisseur
 SpaceNetDataSchema.pre('save', function(next) {
   this.fournisseur = "Space Net";
+  this.reference = this.reference.replace(/[^a-zA-Z0-9]/g, ''); // Remove all non-alphanumeric characters
+
   next();
 });
 
