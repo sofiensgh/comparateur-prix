@@ -6,26 +6,21 @@ const SpaceNetData = require("../models/SpaceNetModel");
 const TunisiaNetData = require("../models/TunisiaNetModel");
 const stringSimilarity = require("string-similarity");
 
-const preprocessReference = (reference) => {
-  let processedReference = reference;
+// const preprocessReference = (reference) => {
+//   let processedReference = reference.trim(); // Trim any leading or trailing spaces
 
-  if (
-    processedReference.startsWith("[") &&
-    processedReference.endsWith("]") &&
-    processedReference.endsWith(".")
-  ) {
-    processedReference = processedReference.slice(1, -2);
-  }
-  if (processedReference.startsWith("[") && processedReference.endsWith("]")) {
-    processedReference = processedReference.slice(1, -1);
-  }
+//   if (!processedReference.startsWith("[") && !processedReference.endsWith("]")) {
+//     processedReference = `[${processedReference}]`;
+//   }
 
-  if (processedReference.endsWith(".")) {
-    processedReference = processedReference.slice(0, -1);
-  }
+//   if (processedReference.endsWith(".")) {
+//     processedReference = `[${processedReference}]`;
+//   }
 
-  return processedReference;
-};
+//   return processedReference;
+// };
+
+
 
 exports.getAllProducts = async (req, res) => {
   try {
@@ -84,6 +79,22 @@ exports.getProductsList = async (req, res) => {
   }
 };
 
+
+
+
+
+
+ // comparaison
+ const preprocessReference = (reference) => {
+  // Remove brackets, spaces, and special characters from the reference
+  return reference.replace(/[\[\]\s\-_/\\.,;:(){}]/g, '').toLowerCase();
+};
+
+const preprocessTitle = (title) => {
+  // Remove unnecessary characters and convert to lowercase
+  return title.replace(/[\[\]\s\-_/\\.,;:(){}]/g, '').toLowerCase();
+};
+
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -100,24 +111,74 @@ exports.getProductById = async (req, res) => {
     }
 
     const reference = preprocessReference(product.reference);
-    console.log(`Searching for products with reference: ${reference}`);
+    const title = preprocessTitle(product.title);
+    console.log(`Searching for products with reference: ${reference} and title: ${title}`);
 
-    const similarProducts = await Promise.all([
-      ElectroTounesData.find({ reference }),
-      MyTekData.find({ reference }),
-      SpaceNetData.find({ reference }),
-      TunisiaNetData.find({ reference }),
-    ]);
+    // Define a search query for each collection with logging
+    const searchQuery = {
+      $or: [
+        { reference: new RegExp(`^${reference}$`, 'i') },
+        { title: new RegExp(title, 'i') }
+      ]
+    };
 
-    // Flatten the array of arrays
-    const allSimilarProducts = similarProducts.flat();
+    console.log('Searching in ElectroTounesData...');
+    const electroTounesResults = await ElectroTounesData.find(searchQuery).lean().exec();
+    console.log('ElectroTounesData results:', electroTounesResults);
 
-    res.json({ product, similarProducts: allSimilarProducts });
+    console.log('Searching in MyTekData...');
+    const myTekResults = await MyTekData.find(searchQuery).lean().exec();
+    console.log('MyTekData results:', myTekResults);
+
+    console.log('Searching in SpaceNetData...');
+    const spaceNetResults = await SpaceNetData.find(searchQuery).lean().exec();
+    console.log('SpaceNetData results:', spaceNetResults);
+
+    console.log('Searching in TunisiaNetData...');
+    const tunisiaNetResults = await TunisiaNetData.find(searchQuery).lean().exec();
+    console.log('TunisiaNetData results:', tunisiaNetResults);
+
+    const similarProductsResults = [
+      ...electroTounesResults,
+      ...myTekResults,
+      ...spaceNetResults,
+      ...tunisiaNetResults
+    ];
+
+    // Calculate similarity based on reference and title
+    const productWithSimilarity = similarProductsResults.map(p => ({
+      ...p,
+      similarity: calculateSimilarity(product, p)
+    }));
+
+    // Sort the similar products by similarity in descending order
+    const sortedSimilarProducts = productWithSimilarity.sort((a, b) => b.similarity - a.similarity);
+
+    res.json({ product, similarProducts: sortedSimilarProducts });
   } catch (error) {
     console.error("Error fetching product:", error);
     res.status(500).json({ message: "Server Error", error });
   }
 };
+
+// Helper function to calculate similarity between two products
+function calculateSimilarity(product1, product2) {
+  // Implement your similarity calculation logic here
+  // This is a placeholder, you should replace it with your own algorithm
+  const referenceSimilarity = preprocessReference(product1.reference) === preprocessReference(product2.reference) ? 1 : 0.5;
+  const titleSimilarity = preprocessTitle(product1.title) === preprocessTitle(product2.title) ? 1 : 0.5;
+  return (referenceSimilarity + titleSimilarity) / 2;
+}
+
+
+
+
+
+
+
+
+
+
 
 exports.getStock = async (req, res) => {
   try {

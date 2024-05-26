@@ -91,6 +91,9 @@ export default function ProductDetails({ params }: ProductProps) {
             <p className="text-gray-900 font-bold text-sm">
               Reference : {product.reference}
             </p>
+            <p className="text-gray-900 font-bold text-sm">
+              {product.fournisseur}
+            </p>
           </div>
         </div>
       </div>

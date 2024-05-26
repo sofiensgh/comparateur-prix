@@ -25,12 +25,12 @@ const Navbar = () => {
     setIsCategoryOpen(!isCategoryOpen);
   };
 
-  const handleSearchChange = (ee: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(ee.target.value);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
-  const handleSearchSubmit = (ee: React.FormEvent<HTMLFormElement>) => {
-    ee.preventDefault();
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     console.log("Search Query:", searchQuery);
   };
 
