@@ -27,7 +27,14 @@ exports.getAllProducts = async (req, res) => {
 //categories
 exports.getProductsList = async (req, res) => {
   try {
-    const { page = 1, limit = 10, categorie, brandId, minPrice, maxPrice } = req.query;
+    const {
+      page = 1,
+      limit = 10,
+      categorie,
+      brandId,
+      minPrice,
+      maxPrice,
+    } = req.query;
     const pageNumber = parseInt(page, 10);
     const itemsPerPage = parseInt(limit, 10);
     const skip = (pageNumber - 1) * itemsPerPage;
@@ -39,7 +46,7 @@ exports.getProductsList = async (req, res) => {
     }
 
     if (brandId) {
-      query.title = new RegExp(brandId, 'i'); // Case-insensitive search on the title
+      query.title = new RegExp(brandId, "i"); // Case-insensitive search on the title
     }
 
     if (minPrice) {
@@ -51,19 +58,36 @@ exports.getProductsList = async (req, res) => {
     }
 
     // Fetch data from each collection without skip
-    const [electroTounesProducts, myTekProducts, spaceNetProducts, tunisiaNetProducts] = await Promise.all([
+    const [
+      electroTounesProducts,
+      myTekProducts,
+      spaceNetProducts,
+      tunisiaNetProducts,
+    ] = await Promise.all([
       ElectroTounesData.find(query),
       MyTekData.find(query),
       SpaceNetData.find(query),
-      TunisiaNetData.find(query)
+      TunisiaNetData.find(query),
     ]);
 
     // Combine all products
     const allProducts = [
-      ...electroTounesProducts,
-      ...myTekProducts,
-      ...spaceNetProducts,
-      ...tunisiaNetProducts,
+      ...electroTounesProducts.map((product) => ({
+        ...product.toObject(),
+        brand: "Electro Tounes",
+      })),
+      ...myTekProducts.map((product) => ({
+        ...product.toObject(),
+        brand: "MyTek",
+      })),
+      ...spaceNetProducts.map((product) => ({
+        ...product.toObject(),
+        brand: "SpaceNet",
+      })),
+      ...tunisiaNetProducts.map((product) => ({
+        ...product.toObject(),
+        brand: "TunisiaNet",
+      })),
     ];
 
     // Apply pagination on the combined results
@@ -81,8 +105,6 @@ exports.getProductsList = async (req, res) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
-
-
 
 exports.getProductById = async (req, res) => {
   try {
@@ -103,7 +125,7 @@ exports.getProductById = async (req, res) => {
     console.log(`Searching for products with reference: ${reference}`);
 
     const searchQuery = {
-      reference: new RegExp(`^${reference}$`, 'i')
+      reference: new RegExp(`^${reference}$`, "i"),
     };
 
     const searchAndLogResults = async (collection, collectionName) => {
@@ -121,29 +143,40 @@ exports.getProductById = async (req, res) => {
       }
     };
 
-    const electroTounesResults = await searchAndLogResults(ElectroTounesData, 'ElectroTounesData');
-    const myTekResults = await searchAndLogResults(MyTekData, 'MyTekData');
-    const spaceNetResults = await searchAndLogResults(SpaceNetData, 'SpaceNetData');
-    const tunisiaNetResults = await searchAndLogResults(TunisiaNetData, 'TunisiaNetData');
+    const electroTounesResults = await searchAndLogResults(
+      ElectroTounesData,
+      "ElectroTounesData"
+    );
+    const myTekResults = await searchAndLogResults(MyTekData, "MyTekData");
+    const spaceNetResults = await searchAndLogResults(
+      SpaceNetData,
+      "SpaceNetData"
+    );
+    const tunisiaNetResults = await searchAndLogResults(
+      TunisiaNetData,
+      "TunisiaNetData"
+    );
 
     const similarProductsResults = [
       ...electroTounesResults,
       ...myTekResults,
       ...spaceNetResults,
-      ...tunisiaNetResults
+      ...tunisiaNetResults,
     ];
 
     if (similarProductsResults.length === 0) {
-      console.log('No similar products found.');
+      console.log("No similar products found.");
       return res.json({ product, similarProducts: [] });
     }
 
-    const productWithSimilarity = similarProductsResults.map(p => ({
+    const productWithSimilarity = similarProductsResults.map((p) => ({
       ...p,
-      similarity: calculateSimilarity(product, p)
+      similarity: calculateSimilarity(product, p),
     }));
 
-    const sortedSimilarProducts = productWithSimilarity.sort((a, b) => b.similarity - a.similarity);
+    const sortedSimilarProducts = productWithSimilarity.sort(
+      (a, b) => b.similarity - a.similarity
+    );
 
     res.json({ product, similarProducts: sortedSimilarProducts });
   } catch (error) {
@@ -153,19 +186,25 @@ exports.getProductById = async (req, res) => {
 };
 
 const preprocessTitle = (title) => {
-  return title.replace(/[\[\]\s\-_/\\.,;:(){}]/g, '').toLowerCase();
+  return title.replace(/[\[\]\s\-_/\\.,;:(){}]/g, "").toLowerCase();
 };
 
 function calculateSimilarity(product1, product2) {
-  const referenceSimilarity = product1.reference === product2.reference ? 1 : 0.5;
-  const titleSimilarity = preprocessTitle(product1.title) === preprocessTitle(product2.title) ? 1 : 0.5;
+  const referenceSimilarity =
+    product1.reference === product2.reference ? 1 : 0.5;
+  const titleSimilarity =
+    preprocessTitle(product1.title) === preprocessTitle(product2.title)
+      ? 1
+      : 0.5;
   return (referenceSimilarity + titleSimilarity) / 2;
 }
 
 exports.getStock = async (req, res) => {
   try {
     const { reference } = req.params;
-    console.log(`Received request for availability of product ID: ${reference}`);
+    console.log(
+      `Received request for availability of product ID: ${reference}`
+    );
 
     let product =
       (await ElectroTounesData.findById(reference)) ||
@@ -196,7 +235,9 @@ exports.getStock = async (req, res) => {
       });
 
       if (storeProduct) {
-        console.log(`Exact product found in store: ${store.name}, Availability: ${storeProduct.availability}`);
+        console.log(
+          `Exact product found in store: ${store.name}, Availability: ${storeProduct.availability}`
+        );
         return {
           store: store.name,
           availability: storeProduct.availability,
@@ -212,11 +253,17 @@ exports.getStock = async (req, res) => {
     const availableProducts = exactMatches.filter((result) => result !== null);
 
     if (availableProducts.length === 0) {
-      console.log(`No exact match found for product reference: ${productReference}`);
-      return res.status(404).json({ message: "Exact match not found in any store" });
+      console.log(
+        `No exact match found for product reference: ${productReference}`
+      );
+      return res
+        .status(404)
+        .json({ message: "Exact match not found in any store" });
     }
 
-    console.log(`Product availability in stores: ${JSON.stringify(availableProducts)}`);
+    console.log(
+      `Product availability in stores: ${JSON.stringify(availableProducts)}`
+    );
 
     res.json(availableProducts);
   } catch (error) {
@@ -225,12 +272,11 @@ exports.getStock = async (req, res) => {
   }
 };
 
-//resultat recherche 
-
+//resultat recherche
 
 exports.searchProducts = async (req, res) => {
   try {
-    const { title, categorie, page = 1, limit = 10 } = req.query;
+    const { title, page = 1, limit = 12 } = req.query;
 
     console.log(`Received request for products with title: ${title}`);
 
@@ -238,48 +284,74 @@ exports.searchProducts = async (req, res) => {
     if (title) {
       const keywords = title.split(/\s+/);
       const regexPatterns = keywords.map((word) => new RegExp(word, "i"));
-      const regex = regexPatterns.map((pattern) => `(?=.*${pattern.source})`).join("");
+      const regex = regexPatterns
+        .map((pattern) => `(?=.*${pattern.source})`)
+        .join("");
       searchCriteria.title = new RegExp(regex, "i");
-    }
-
-    if (categorie) {
-      searchCriteria.categorie = categorie;
     }
 
     console.log(`Search criteria: ${JSON.stringify(searchCriteria)}`);
 
-    const [electroTounesProducts, myTekProducts, spaceNetProducts, tunisiaNetProducts] = await Promise.all([
-      ElectroTounesData.find(searchCriteria).skip((page - 1) * limit).limit(limit),
-      MyTekData.find(searchCriteria).skip((page - 1) * limit).limit(limit),
-      SpaceNetData.find(searchCriteria).skip((page - 1) * limit).limit(limit),
-      TunisiaNetData.find(searchCriteria).skip((page - 1) * limit).limit(limit),
+    const [
+      electroTounesProducts,
+      myTekProducts,
+      spaceNetProducts,
+      tunisiaNetProducts,
+    ] = await Promise.all([
+      ElectroTounesData.find(searchCriteria)
+        .limit(limit)
+        .skip((page - 1) * limit),
+      MyTekData.find(searchCriteria)
+        .limit(limit)
+        .skip((page - 1) * limit),
+      SpaceNetData.find(searchCriteria)
+        .limit(limit)
+        .skip((page - 1) * limit),
+      TunisiaNetData.find(searchCriteria)
+        .limit(limit)
+        .skip((page - 1) * limit),
     ]);
 
-    const products = [
+    const allProducts = [
       ...electroTounesProducts,
       ...myTekProducts,
       ...spaceNetProducts,
       ...tunisiaNetProducts,
     ];
 
-    if (products.length === 0) {
+    console.log(`Total products found: ${allProducts.length}`);
+
+    if (allProducts.length === 0) {
+      console.log("No products found");
       return res.status(404).json({ message: "No products found" });
     }
 
-    res.json(products);
+    const totalProducts = allProducts.length;
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    console.log(`Total pages: ${totalPages}`);
+    console.log(`Current page: ${parseInt(page)}`);
+
+    res.json({
+      totalPages,
+      currentPage: parseInt(page),
+      totalProducts,
+      products: allProducts,
+    });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ message: "Server Error", error });
   }
 };
 
-
 exports.getProductsByCategory = async (req, res) => {
   try {
     const { categorie } = req.params;
     console.log(`Received request for category: ${categorie}`);
 
-    const dataElectroTounes = await ElectroTounesData.find({ categorie }).limit(50);
+    const dataElectroTounes = await ElectroTounesData.find({ categorie }).limit(
+      50
+    );
     const dataMyTek = await MyTekData.find({ categorie }).limit(50);
     const dataSpaceNet = await SpaceNetData.find({ categorie }).limit(50);
     const dataTunisiaNet = await TunisiaNetData.find({ categorie }).limit(50);
@@ -293,9 +365,13 @@ exports.getProductsByCategory = async (req, res) => {
 
     if (combinedData.length === 0) {
       console.log(`No data found for category: ${categorie}`);
-      return res.status(404).json({ message: "No data found for this category" });
+      return res
+        .status(404)
+        .json({ message: "No data found for this category" });
     } else {
-      console.log(`Found ${combinedData.length} items for category: ${categorie}`);
+      console.log(
+        `Found ${combinedData.length} items for category: ${categorie}`
+      );
     }
 
     res.json(combinedData);
@@ -315,7 +391,7 @@ exports.getProductsByReference = async (req, res) => {
 
     console.log(`Fetching products with reference: ${reference}`);
 
-    reference = reference.replace(/[^a-zA-Z0-9]/g, '').toLowerCase(); // Ensure reference is normalized
+    reference = reference.replace(/[^a-zA-Z0-9]/g, "").toLowerCase(); // Ensure reference is normalized
 
     let allProducts = [];
 

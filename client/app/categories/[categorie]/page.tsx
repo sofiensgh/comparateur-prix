@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import ProductCards from "@/components/ProductCards";
 import LoadingComponent from "@/components/Loading";
+import PriceFilter from "@/components/PriceFilter";
 
 interface Product {
   _id: string;
@@ -14,7 +15,8 @@ interface Product {
   fournisseur: string;
   categorie: string;
   rate: number;
-  availability: string; // Add availability field to the Product interface
+  availability: string;
+  brandId: string; // Added brandId field
 }
 
 const fetcher = (url: string) =>
@@ -39,19 +41,69 @@ export default function CategoryPage({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const pageParam = searchParams.get("page");
+  const minPriceParam = searchParams.get("minPrice");
+  const maxPriceParam = searchParams.get("maxPrice");
+  const brandIdParam = searchParams.get("brandId"); // Add brandId parameter
+
   const [currentPage, setCurrentPage] = useState(
     pageParam ? parseInt(pageParam) : 1
   );
+  const [minPrice, setMinPrice] = useState<number | null>(
+    minPriceParam ? parseInt(minPriceParam) : null
+  );
+  const [maxPrice, setMaxPrice] = useState<number | null>(
+    maxPriceParam ? parseInt(maxPriceParam) : null
+  );
+  const [brandId, setBrandId] = useState<string | null>(brandIdParam); // Initialize brandId state
+  const [localBrandId, setLocalBrandId] = useState<string | null>(brandIdParam); // Local state for input
+
   const productsPerPage = 12;
 
   const { data, error, isLoading } = useSWR(
-    `http://localhost:5000/api/productslist?categorie=${params.categorie}&page=${currentPage}&limit=${productsPerPage}`,
+    `http://localhost:5000/api/productslist?categorie=${
+      params.categorie
+    }&page=${currentPage}&limit=${productsPerPage}${
+      minPrice ? `&minPrice=${minPrice}` : ""
+    }${maxPrice ? `&maxPrice=${maxPrice}` : ""}${
+      brandId ? `&brandId=${encodeURIComponent(brandId)}` : ""
+    }`, // Include brandId parameter in fetcher URL
     fetcher
   );
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    router.push(`${pathname}?page=${page}`);
+    router.push(
+      `${pathname}?page=${page}${
+        minPrice !== null ? `&minPrice=${minPrice}` : ""
+      }${maxPrice !== null ? `&maxPrice=${maxPrice}` : ""}${
+        brandId !== null ? `&brandId=${brandId}` : ""
+      }` // Update router push to include brandId parameter
+    );
+  };
+
+  const handleFilterChange = (minPrice: number, maxPrice: number) => {
+    setMinPrice(minPrice);
+    setMaxPrice(maxPrice);
+    setCurrentPage(1);
+    router.push(
+      `${pathname}?page=1&minPrice=${minPrice}&maxPrice=${maxPrice}${
+        brandId !== null ? `&brandId=${brandId}` : ""
+      }`
+    ); // Update router push to include brandId parameter
+  };
+
+  const handleBrandIdInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalBrandId(e.target.value);
+  };
+
+  const handleFilterSubmit = () => {
+    setBrandId(localBrandId);
+    setCurrentPage(1);
+    router.push(
+      `${pathname}?page=1${minPrice !== null ? `&minPrice=${minPrice}` : ""}${
+        maxPrice !== null ? `&maxPrice=${maxPrice}` : ""
+      }${localBrandId !== null ? `&brandId=${localBrandId}` : ""}`
+    );
   };
 
   useEffect(() => {
@@ -74,7 +126,6 @@ export default function CategoryPage({
   const { products, totalPages } = data;
   const currentPageData = products;
 
-  // Calculate the range of pages to display in pagination
   const startPage = Math.max(1, currentPage - 1);
   const endPage = Math.min(totalPages, startPage + 2);
 
@@ -82,7 +133,20 @@ export default function CategoryPage({
     <div className="bg-gradient-to-r from-gray-100 via-white-500 to-white-500 flex flex-col md:flex-row min-h-screen">
       <aside className="w-full md:w-1/4 p-4 bg-gray-200 sticky top-0 h-screen overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Filters</h2>
-        {/* Add filter options here */}
+        <input
+          type="text"
+          placeholder="Enter brandId"
+          value={localBrandId || ""}
+          onChange={handleBrandIdInputChange}
+          className="border border-gray-300 rounded-md p-2 mb-4 mr-2" // Added mr-2 for margin
+        />
+        <button
+          onClick={handleFilterSubmit}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md" // Added styling for button
+        >
+          Apply Filter
+        </button>
+        <PriceFilter onFilterChange={handleFilterChange} />
       </aside>
 
       <main className="w-full md:w-3/4 p-4">
@@ -124,7 +188,9 @@ export default function CategoryPage({
                       <span>...</span>
                       <button
                         className={`px-4 py-2 border border-gray-300 rounded-lg pagination-btn ${
-                          currentPage === totalPages ? "bg-gray-300" : "bg-white"
+                          currentPage === totalPages
+                            ? "bg-gray-300"
+                            : "bg-white"
                         }`}
                         onClick={() => handlePageChange(totalPages)}
                       >
@@ -150,7 +216,6 @@ export default function CategoryPage({
           height: 48px;
           animation: spin 1s linear infinite;
         }
-
         @keyframes spin {
           0% {
             transform: rotate(0deg);
