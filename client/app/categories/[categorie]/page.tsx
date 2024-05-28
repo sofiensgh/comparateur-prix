@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import ProductCards from "@/components/ProductCards";
+import LoadingComponent from "@/components/Loading";
 
 interface Product {
   _id: string;
@@ -15,7 +16,6 @@ interface Product {
   rate: number;
   availability: string; // Add availability field to the Product interface
 }
-
 
 const fetcher = (url: string) =>
   fetch(url, { cache: "no-store" })
@@ -42,13 +42,11 @@ export default function CategoryPage({
   const [currentPage, setCurrentPage] = useState(
     pageParam ? parseInt(pageParam) : 1
   );
-  const [loading, setLoading] = useState(true);
   const productsPerPage = 12;
 
-  const { data, error } = useSWR(
+  const { data, error, isLoading } = useSWR(
     `http://localhost:5000/api/productslist?categorie=${params.categorie}&page=${currentPage}&limit=${productsPerPage}`,
-    fetcher,
-    { onSuccess: () => setLoading(false) }
+    fetcher
   );
 
   const handlePageChange = (page: number) => {
@@ -65,27 +63,23 @@ export default function CategoryPage({
     return <div>Error loading data</div>;
   }
 
-  if (!data) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return <LoadingComponent />;
   }
 
-  if (!Array.isArray(data)) {
-    console.error("Data is not an array:", data);
+  if (!data) {
     return <div>Error: Unexpected data format</div>;
   }
 
-  const totalPages = Math.ceil(data.length / productsPerPage);
-  const currentPageData = data.slice(
-    (currentPage - 1) * productsPerPage,
-    currentPage * productsPerPage
-  );
+  const { products, totalPages } = data;
+  const currentPageData = products;
 
   // Calculate the range of pages to display in pagination
   const startPage = Math.max(1, currentPage - 1);
   const endPage = Math.min(totalPages, startPage + 2);
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
+    <div className="bg-gradient-to-r from-gray-100 via-white-500 to-white-500 flex flex-col md:flex-row min-h-screen">
       <aside className="w-full md:w-1/4 p-4 bg-gray-200 sticky top-0 h-screen overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Filters</h2>
         {/* Add filter options here */}
@@ -93,7 +87,7 @@ export default function CategoryPage({
 
       <main className="w-full md:w-3/4 p-4">
         <h1 className="text-2xl font-bold mb-8">{params.categorie} Products</h1>
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <div className="spinner"></div>
           </div>
@@ -114,7 +108,7 @@ export default function CategoryPage({
                     (_, index) => (
                       <button
                         key={startPage + index}
-                        className={`px-4 py-2 border border-gray-300 rounded-lg ${
+                        className={`px-4 py-2 border border-gray-300 rounded-lg pagination-btn ${
                           currentPage === startPage + index
                             ? "bg-gray-300"
                             : "bg-white"
@@ -129,10 +123,8 @@ export default function CategoryPage({
                     <>
                       <span>...</span>
                       <button
-                        className={`px-4 py-2 border border-gray-300 rounded-lg ${
-                          currentPage === totalPages
-                            ? "bg-gray-300"
-                            : "bg-white"
+                        className={`px-4 py-2 border border-gray-300 rounded-lg pagination-btn ${
+                          currentPage === totalPages ? "bg-gray-300" : "bg-white"
                         }`}
                         onClick={() => handlePageChange(totalPages)}
                       >
@@ -149,8 +141,6 @@ export default function CategoryPage({
           </div>
         )}
       </main>
-
-      {/* Add your custom styles here */}
       <style jsx>{`
         .spinner {
           border: 8px solid rgba(0, 0, 0, 0.1);
@@ -171,13 +161,13 @@ export default function CategoryPage({
         }
 
         @media (max-width: 768px) {
-          .flex-col.md\:flex-row {
+          .flex-col.md\\:flex-row {
             flex-direction: column;
           }
-          .md\:w-1/4 {
+          .md\\:w-1/4 {
             width: 100%;
           }
-          .md\:w-3/4 {
+          .md\\:w-3/4 {
             width: 100%;
           }
         }

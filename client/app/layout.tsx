@@ -32,7 +32,7 @@ export default function RootLayout({
         <main>
           <Navbar />
           <SlideBar />
-          <FavoritesSidebar />
+          {/* <FavoritesSidebar /> */}
 
           {children}
 

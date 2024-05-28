@@ -15,10 +15,7 @@ const TunisiaNetData = require("../../models/TunisiaNetModel");
 
   const page = await browser.newPage();
   await page.goto(
-    //switch between links
-    
-    //"https://www.tunisianet.com.tn/300-informatique?page=1&order=product.price.asc",
-    "https://www.tunisianet.com.tn/303-stockage-informatique-tunisie?page=1&order=product.price.asc",
+    "https://www.tunisianet.com.tn/359-tv-son-photos?page=1&order=product.price.asc",
     {
       waitUntil: "domcontentloaded",
     }
@@ -92,7 +89,7 @@ const TunisiaNetData = require("../../models/TunisiaNetModel");
           ".wb-image-block a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
           (el) => el.href.trim()
         );
-        const categorie = "Informatique";
+        const categorie = "TvAndSon";
 
         // Create a new ScrapedData instance and save it to MongoDB
         const newDataItem = new TunisiaNetData({

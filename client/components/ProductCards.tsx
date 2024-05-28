@@ -56,12 +56,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <p className="text-gray-600 text-xs mt-1 truncate">Category <span className="font-semibold text-primeColor">{product.categorie}</span></p>
           <div className="flex items-center justify-between mt-4">
             <p className="text-red-600 truncate">Price</p>
-            <span className="text-md font-bold text-red-600"> {product.price} DT</span>
+            <span className="text-md font-bold text-red-600"> {product.price.toFixed(3)} DT</span>
             <div className="flex space-x-2">
               {renderAvailabilityIcon()} {/* Render availability icon */}
-              <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
-                <CiHeart size={20} />
-              </button>
               <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
                 <BsArrowsFullscreen size={20} />
               </button>
@@ -84,4 +81,3 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 };
 
 export default ProductCard;
-

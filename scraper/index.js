@@ -9,6 +9,8 @@ const TunisiaNetData = require("./models/TunisiaNetModel");
 const bodyParser = require("body-parser");
 const productRoutes = require("./routes/route");
 const cookieParser = require("cookie-parser");
+const nodemailerRoutes = require("./routes/nodemailerRoutes"); // Import the nodemailer router
+
 
 const connectDB = require("./config/db");
 require("dotenv").config();
@@ -34,6 +36,8 @@ app.use("/api", productRoutes);
 const userRoutes = require("./routes/userRoutes");
 
 app.use("/api/users", userRoutes);
+
+app.use('/api/nodemailer', nodemailerRoutes);
 
 
 app.use(bodyParser.json());

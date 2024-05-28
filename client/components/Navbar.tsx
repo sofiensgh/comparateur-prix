@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,6 +17,7 @@ const Navbar = () => {
     { title: "Home", link: "/" },
     { title: "Categorie", link: "/categories" },
     { title: "About", link: "/about" },
+    { title: "Contact", link: "/contact" },
   ];
 
   const pathname = usePathname();
@@ -27,11 +28,6 @@ const Navbar = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Search Query:", searchQuery);
   };
 
   const toggleSliderbar = () => {
@@ -57,8 +53,7 @@ const Navbar = () => {
         <div> 
           <SearchInput 
             searchQuery={searchQuery} 
-            onSearchChange={handleSearchChange} 
-            onSearchSubmit={handleSearchSubmit}
+            onSearchChange={handleSearchChange}
           />
         </div>
         <div className="hidden md:flex items-center gap-4">

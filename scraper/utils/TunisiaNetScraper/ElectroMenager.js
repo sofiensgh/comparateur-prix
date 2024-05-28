@@ -15,7 +15,7 @@ const TunisiaNetData = require("../../models/TunisiaNetModel");
 
   const page = await browser.newPage();
   await page.goto(
-    "https://www.tunisianet.com.tn/397-electromenager-tunisianet?page=2&order=product.price.asc",
+    "https://www.tunisianet.com.tn/397-electromenager-tunisianet?page=1&order=product.price.asc",
     {
       waitUntil: "domcontentloaded",
     }

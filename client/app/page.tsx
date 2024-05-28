@@ -1,6 +1,6 @@
 "use client";
 import HeroCarousel from "@/components/HeroCarousel";
-import ProductCards from "@/components/ProductCards";
+import ProductCard from "@/components/ProductCards";
 // import Searchbar from "@/components/Searchbar";
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
@@ -90,7 +90,7 @@ const Home = () => {
           <div className="text-sm overflow-x-auto whitespace-nowrap scroll-smooth scrollbar-hide" ref={scrollRef}>
             <div className="inline-flex space-x-4">
               {filteredProducts.map((product) => (
-                <ProductCards key={product._id} product={product} />
+                <ProductCard key={product._id} product={product} />
               ))}
             </div>
           </div>
@@ -110,7 +110,7 @@ const Home = () => {
           ))}
         </div>
         <div className="mt-8 md:mt-0 md:ml-8">
-          <FavoritesSidebar />
+          {/* <FavoritesSidebar /> */}
         </div>
       </section>
 

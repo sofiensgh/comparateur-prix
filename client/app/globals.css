@@ -236,60 +236,113 @@ body {
   margin: 0;
 }
 
-footer {
-  margin-top: auto;
-  width: 100%;
-  background-color: #313131; /* light grey background */
-  padding: 1rem 0;
-  box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+/* Footer Styles */
+.footer {
+  background-color: #333;
+  color: #fff;
+  padding: 40px 0;
+  font-family: 'Montserrat', sans-serif;
 }
 
-.footer .container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .footer-content {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+}
+
+.footer-logo {
+  flex: 0 0 auto;
+}
+
+.footer-logo img {
+  max-width: 150px;
+}
+
+.footer-links {
+  flex: 1 0 auto;
+  display: flex;
+  justify-content: center;
 }
 
 .footer-links ul {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-links ul li {
+  margin: 0 20px;
 }
 
 .footer-links ul li a {
-  color: #ffffff;
+  color: #fff;
   text-decoration: none;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+.footer-links ul li a:hover {
+  color: #ff6b6b;
 }
 
 .social-icons {
+  flex: 0 0 auto;
   display: flex;
-  gap: 1rem;
+  align-items: center;
 }
 
-.social-icons a {
-  color: #ffffff;
-  font-size: 1.5rem;
-  text-decoration: none;
+.social-icon {
+  color: #fff;
+  font-size: 24px;
+  margin-left: 15px;
+  transition: color 0.3s ease;
+}
+
+.social-icon:hover {
+  color: #ff6b6b;
 }
 
 .footer-bottom {
-  margin-top: 1rem;
-  color: #ffffff;
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
 }
 
+/* Responsive Styles */
+@media (max-width: 767px) {
+  .footer-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-logo {
+    margin-bottom: 20px;
+  }
+
+  .footer-links {
+    order: 2;
+    margin-top: 20px;
+  }
+
+  .footer-links ul li {
+    margin: 10px;
+  }
+
+  .social-icons {
+    order: 1;
+  }
+}
 
 /*category design*/
 /* CategoryWindow.module.css */
@@ -463,4 +516,5 @@ footer {
     width: 16rem; /* 64 */
   }
 }
+
 }

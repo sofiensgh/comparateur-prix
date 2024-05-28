@@ -3,7 +3,7 @@ const MyTekData = require("../models/MyTekTtnModel");
 const SpaceNetData = require("../models/SpaceNetModel");
 const TunisiaNetData = require("../models/TunisiaNetModel");
 const stringSimilarity = require("string-similarity");
-
+//home
 exports.getAllProducts = async (req, res) => {
   try {
     const electroTounesProducts = await ElectroTounesData.find().limit(10);
@@ -24,26 +24,41 @@ exports.getAllProducts = async (req, res) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
-
+//categories
 exports.getProductsList = async (req, res) => {
   try {
-    const { page = 1, categorie } = req.query;
+    const { page = 1, limit = 10, categorie, brandId, minPrice, maxPrice } = req.query;
     const pageNumber = parseInt(page, 10);
-
-    const skip = (pageNumber - 1) * 10; // Assuming default limit is 10
-    console.log(`Pagination parameters - Page: ${pageNumber}, Skip: ${skip}`);
+    const itemsPerPage = parseInt(limit, 10);
+    const skip = (pageNumber - 1) * itemsPerPage;
 
     let query = {};
 
     if (categorie) {
-      query = { categorie: categorie };
+      query.categorie = categorie;
     }
 
-    const electroTounesProducts = await ElectroTounesData.find(query).skip(skip);
-    const myTekProducts = await MyTekData.find(query).skip(skip);
-    const spaceNetProducts = await SpaceNetData.find(query).skip(skip);
-    const tunisiaNetProducts = await TunisiaNetData.find(query).skip(skip);
+    if (brandId) {
+      query.title = new RegExp(brandId, 'i'); // Case-insensitive search on the title
+    }
 
+    if (minPrice) {
+      query.price = { ...query.price, $gte: parseFloat(minPrice) };
+    }
+
+    if (maxPrice) {
+      query.price = { ...query.price, $lte: parseFloat(maxPrice) };
+    }
+
+    // Fetch data from each collection without skip
+    const [electroTounesProducts, myTekProducts, spaceNetProducts, tunisiaNetProducts] = await Promise.all([
+      ElectroTounesData.find(query),
+      MyTekData.find(query),
+      SpaceNetData.find(query),
+      TunisiaNetData.find(query)
+    ]);
+
+    // Combine all products
     const allProducts = [
       ...electroTounesProducts,
       ...myTekProducts,
@@ -51,23 +66,33 @@ exports.getProductsList = async (req, res) => {
       ...tunisiaNetProducts,
     ];
 
-    console.log("Fetched products:", allProducts.length);
-    res.json(allProducts);
+    // Apply pagination on the combined results
+    const paginatedProducts = allProducts.slice(skip, skip + itemsPerPage);
+
+    console.log("Fetched products:", paginatedProducts.length);
+    res.json({
+      totalPages: Math.ceil(allProducts.length / itemsPerPage),
+      currentPage: pageNumber,
+      totalProducts: allProducts.length,
+      products: paginatedProducts,
+    });
   } catch (error) {
     console.error("Error fetching data:", error);
     res.status(500).json({ message: "Server Error", error });
   }
 };
 
+
+
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`Received request for product ID: ${id}`);
 
-    let product = await ElectroTounesData.findById(id);
-    if (!product) product = await MyTekData.findById(id);
-    if (!product) product = await SpaceNetData.findById(id);
-    if (!product) product = await TunisiaNetData.findById(id);
+    let product = await ElectroTounesData.findById(id).lean();
+    if (!product) product = await MyTekData.findById(id).lean();
+    if (!product) product = await SpaceNetData.findById(id).lean();
+    if (!product) product = await TunisiaNetData.findById(id).lean();
 
     if (!product) {
       console.log(`No product found with ID: ${id}`);
@@ -200,9 +225,12 @@ exports.getStock = async (req, res) => {
   }
 };
 
+//resultat recherche 
+
+
 exports.searchProducts = async (req, res) => {
   try {
-    const { title, categorie } = req.query;
+    const { title, categorie, page = 1, limit = 10 } = req.query;
 
     console.log(`Received request for products with title: ${title}`);
 
@@ -220,10 +248,12 @@ exports.searchProducts = async (req, res) => {
 
     console.log(`Search criteria: ${JSON.stringify(searchCriteria)}`);
 
-    const electroTounesProducts = await ElectroTounesData.find(searchCriteria);
-    const myTekProducts = await MyTekData.find(searchCriteria);
-    const spaceNetProducts = await SpaceNetData.find(searchCriteria);
-    const tunisiaNetProducts = await TunisiaNetData.find(searchCriteria);
+    const [electroTounesProducts, myTekProducts, spaceNetProducts, tunisiaNetProducts] = await Promise.all([
+      ElectroTounesData.find(searchCriteria).skip((page - 1) * limit).limit(limit),
+      MyTekData.find(searchCriteria).skip((page - 1) * limit).limit(limit),
+      SpaceNetData.find(searchCriteria).skip((page - 1) * limit).limit(limit),
+      TunisiaNetData.find(searchCriteria).skip((page - 1) * limit).limit(limit),
+    ]);
 
     const products = [
       ...electroTounesProducts,
@@ -242,6 +272,7 @@ exports.searchProducts = async (req, res) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
+
 
 exports.getProductsByCategory = async (req, res) => {
   try {

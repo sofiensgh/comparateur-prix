@@ -1,29 +1,40 @@
 "use client";
 import React, { useState } from 'react';
+import axios from 'axios';
+import SuccessMessage from '@/components/SuccessMessage'; // Import the SuccessMessage component
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false); // State variable for success message
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log(`Name: ${name}, Email: ${email}, Message: ${message}`);
-    // Reset form fields
-    setName('');
-    setEmail('');
-    setMessage('');
+    try {
+      const response = await axios.post('http://localhost:5000/api/nodemailer/send', { name, email, message });
+      console.log(response.data);
+      setName('');
+      setEmail('');
+      setMessage('');
+      setError('');
+      setShowSuccess(true); // Show success message on successful form submission
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setError('Failed to send message. Please try again later.');
+    }
   };
 
   return (
-    <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 min-h-screen flex items-center justify-center">
+    <div className="bg-gradient-to-r from-gray-100 via-white-500 to-white-500 min-h-screen flex items-center justify-center">
       <div className="max-w-md mx-auto p-8 bg-white rounded-xl shadow-xl">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Contact Us</h1>
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Contactez-nous
+</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-gray-700 font-semibold mb-2">
-              Name
+              Votre Nom
             </label>
             <input
               type="text"
@@ -36,7 +47,7 @@ const ContactPage: React.FC = () => {
           </div>
           <div>
             <label htmlFor="email" className="block text-gray-700 font-semibold mb-2">
-              Email
+              Votre E-mail
             </label>
             <input
               type="email"
@@ -60,13 +71,15 @@ const ContactPage: React.FC = () => {
               required
             />
           </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             type="submit"
             className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors duration-300"
           >
-            Submit
+            Envoyer
           </button>
         </form>
+        {showSuccess && <SuccessMessage onClose={() => setShowSuccess(false)} />} {/* Show success message */}
       </div>
     </div>
   );

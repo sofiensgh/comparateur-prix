@@ -1,44 +1,37 @@
 const puppeteer = require("puppeteer");
 const mongoose = require("mongoose");
-const TunisiaNetData = require("../../models/TunisiaNetModel");
+const SpaceNetData = require("../../models/SpaceNetModel");
 
 (async () => {
   // Connect to MongoDB
   await mongoose.connect(
     "mongodb+srv://scrap:scrap123@scrapping.zid0882.mongodb.net/?retryWrites=true&w=majority&appName=Scrapping"
   );
-
   const browser = await puppeteer.launch({
     headless: false,
     defaultViewport: null,
   });
 
   const page = await browser.newPage();
-  await page.goto(
-    //switch between links
-    
-    //"https://www.tunisianet.com.tn/300-informatique?page=1&order=product.price.asc",
-    "https://www.tunisianet.com.tn/303-stockage-informatique-tunisie?page=1&order=product.price.asc",
-    {
-      waitUntil: "domcontentloaded",
-    }
-  );
+  await page.goto("https://spacenet.tn/6-image-son?page=1", {
+    waitUntil: "domcontentloaded",
+  });
 
   // Initialize an empty array to store items
   let newData = [];
 
   let isBtnDisabled = false;
   while (!isBtnDisabled) {
-    const productsHandles = await page.$$(".item-product");
+    const productsHandles = await page.$$(".item-product-list");
     for (const productHandle of productsHandles) {
       try {
         // Extract title, price, and image using page.evaluate
         const title = await productHandle.$eval(
-          ".wb-product-desc.product-description > h2 > a",
+          ".right-product > h2 > a ",
           (el) => el.textContent.trim()
         );
         const price = await productHandle.$eval(
-          ".wb-product-desc.product-description > .product-price-and-shipping > span",
+          ".product-price-and-shipping > span",
           (el) => {
             const priceString = el.textContent.trim().replace(/\s/g, ""); // Remove spaces
             const priceParts = priceString.split(","); // Split by comma
@@ -51,23 +44,22 @@ const TunisiaNetData = require("../../models/TunisiaNetModel");
             return !isNaN(formattedNumber) ? formattedNumber : null; // Check if it's a valid number
           }
         );
-
         const reference = await productHandle.$eval(
-          ".wb-product-desc.product-description > span.product-reference",
+          ".product-reference > span",
           (el) => el.textContent.trim()
         );
         const description = await productHandle.$eval(
-          ".wb-product-desc.product-description > div.listds > a",
+          ".decriptions-short",
           (el) => el.textContent.trim()
         );
 
         // Extract availability with multiple conditions
         let availability = "In stock"; // Default value
         const inStockElement = await productHandle.$(
-          ".wb-product-desc.product-description > div > span.in-stock"
+          ".product-quantities > label"
         );
         const laterStockElement = await productHandle.$(
-          ".wb-product-desc.product-description > div > span.later-stock"
+          ".product-quantities > label.label-out-of-stock"
         );
 
         if (inStockElement) {
@@ -79,23 +71,23 @@ const TunisiaNetData = require("../../models/TunisiaNetModel");
             el.textContent.trim()
           );
         } else {
-          availability = "Out of stock"; // Add more conditions as needed
+          availability = "En arrivage"; // Add more conditions as needed
         }
 
         const img = await productHandle.$eval(
-          ".wb-image-block img.img-responsive",
+          "span.cover_image img.img-responsive.product_image",
           (el) => el.getAttribute("src")
         );
 
         //extract product url
         const productUrl = await productHandle.$eval(
-          ".wb-image-block a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
+          ".left-product a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
           (el) => el.href.trim()
         );
-        const categorie = "Informatique";
+        const categorie = "TvAndSon";
 
         // Create a new ScrapedData instance and save it to MongoDB
-        const newDataItem = new TunisiaNetData({
+        const newDataItem = new SpaceNetData({
           title: title,
           price: price,
           reference: reference,
@@ -104,9 +96,8 @@ const TunisiaNetData = require("../../models/TunisiaNetModel");
           img: img,
           productUrl: productUrl,
           categorie: categorie,
-          fournisseur: TunisiaNetData.fournisseur,
+          fournisseur: SpaceNetData.fournisseur,
 
-          
         });
         await newDataItem.save(); // Save to MongoDB
         console.log("Saved to database:", newDataItem);
@@ -121,25 +112,32 @@ const TunisiaNetData = require("../../models/TunisiaNetModel");
           description: "Error",
           availability: "Error",
           img: "Error",
-          categorie:"Error",
-          fournisseur:"Error"
+          categorie:"Error", 
+          fournisseur:"Error",
+
         });
       }
     }
 
-    await page.waitForSelector("li > a.next.js-search-link", { visible: true });
+    // Check if the next button exists
+    await page.waitForSelector("li > a.next.js-search-link");
     const is_disabled =
-      (await page.$("li > a.next.js-search-link.disabled")) !== null;
+      (await page.$(" li > a.next.disabled.js-search-link")) !== null;
     isBtnDisabled = is_disabled;
+
     if (!is_disabled) {
-      await page.click("li > a.next.js-search-link");
+      // Click the next button using the evaluate method
+      await page.evaluate(() => {
+        document.querySelector("li > a.next.js-search-link").click();
+      });
+
+      // Wait for navigation to complete
       await page.waitForNavigation({ waitUntil: "domcontentloaded" });
     }
   }
 
   // Log the total number of items
   console.log("Total items:", newData.length);
-
   // Close the browser
   await browser.close();
   mongoose.connection.close();

@@ -2,6 +2,9 @@
 import React, { useEffect, useState } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import ProductCards from "@/components/ProductCards";
+import LoadingComponent from "@/components/Loading";
+import ProductNotFound from "@/components/ProductNotFound";
+
 
 interface Product {
   _id: string;
@@ -74,9 +77,10 @@ const ResultatPage = () => {
   };
 
   return (
+    <div className="bg-gradient-to-r from-gray-100 via-white-500 to-white-500 min-h-screen flex items-center justify-center">
     <div className="container mx-auto px-4 sm:px-8">
       <h1 className="text-2xl font-bold my-4 text-center">Search Results for "{title}"</h1>
-      {loading && <p className="text-center mt-4">Loading...</p>}
+      {loading && <p className="text-center mt-4"><LoadingComponent /></p>}
       {error && <p className="text-center mt-4 text-red-600">Error: {error}</p>}
       <div className="flex justify-center">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -86,7 +90,7 @@ const ResultatPage = () => {
         </div>
       </div>
       {searchResults.length === 0 && !loading && !error && (
-        <p className="text-center mt-4">No products found</p>
+        <p className="text-center mt-4"><ProductNotFound /></p>
       )}
       <div className="flex justify-center mt-4">
         <button
@@ -104,6 +108,7 @@ const ResultatPage = () => {
           Next Page
         </button>
       </div>
+    </div>
     </div>
   );
 };

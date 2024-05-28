@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faPen } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
+import SuccessMessage from './SuccessMessage'; // Import the SuccessMessage component
 
 interface AvisProps {
   productId: string;
@@ -12,6 +14,8 @@ const Avis: React.FC<AvisProps> = ({ productId }) => {
   const [feedback, setFeedback] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [emailError, setEmailError] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showSuccess, setShowSuccess] = useState<boolean>(false);
 
   const handleFeedbackChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setFeedback(event.target.value);
@@ -23,23 +27,38 @@ const Avis: React.FC<AvisProps> = ({ productId }) => {
     setEmailError('');
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validateEmail(email)) {
       setEmailError('Invalid email format');
       return;
     }
-    // Send the feedback and email to your backend or handle it as needed
-    console.log(feedback, email);
-    setFeedback('');
-    setEmail('');
-    setShowFeedback(false);
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/nodemailer/send', { name: feedback, email, message: feedback });
+      console.log(response.data);
+      setFeedback('');
+      setEmail('');
+      setShowFeedback(false);
+      setShowSuccess(true); // Show success message
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setEmailError('Failed to send message. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const validateEmail = (email: string) => {
     // Email format validation logic
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
   };
 
   return (
@@ -57,11 +76,11 @@ const Avis: React.FC<AvisProps> = ({ productId }) => {
             <div className="absolute top-0 right-0 cursor-pointer" onClick={() => setShowFeedback(false)}>
               <FontAwesomeIcon icon={faTimes} className="text-gray-500 hover:text-gray-700" />
             </div>
-            <h2 className="text-lg font-bold mb-2">Give your feedback</h2>
-            <form onSubmit={handleSubmit}>
+            <h2 className="text-lg font-bold mb-2">Donnez votre avis</h2>
+            <form onSubmit={handleSubmit} className={isSubmitting ? 'opacity-50 pointer-events-none' : ''}>
               <div className="mb-4">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
+                  Votre E-mail
                 </label>
                 <input
                   type="email"
@@ -70,22 +89,24 @@ const Avis: React.FC<AvisProps> = ({ productId }) => {
                   onChange={handleEmailChange}
                   placeholder="Enter your email"
                   className="w-full mt-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-300"
+                  disabled={isSubmitting}
                 />
                 {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
               </div>
               <textarea
                 value={feedback}
                 onChange={handleFeedbackChange}
-                placeholder="Write your feedback here..."
-                className="w-full h-40 border border-gray-300 rounded-md p-2 transition-all duration-300"
+                placeholder="vos commentaires ici..."
+                className="w-full h-40 border border-gray-300 rounded-md p-2 resize-none transition-all duration-300"
               />
               <button type="submit" className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors">
-                Submit
+                Envoyer
               </button>
             </form>
           </div>
         </div>
       )}
+      {showSuccess && <SuccessMessage onClose={handleSuccessClose} />}
     </div>
   );
 };
