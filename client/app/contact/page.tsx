@@ -27,7 +27,7 @@ const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-gray-100 via-white-500 to-white-500 min-h-screen flex items-center justify-center">
+    <div className="bg-gradient-to-r from-gray-200 via-white-500 to-white-500 min-h-screen flex items-center justify-center">
       <div className="max-w-md mx-auto p-8 bg-white rounded-xl shadow-xl">
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Contactez-nous
 </h1>
@@ -74,7 +74,7 @@ const ContactPage: React.FC = () => {
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors duration-300"
+            className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition-colors duration-300"
           >
             Envoyer
           </button>

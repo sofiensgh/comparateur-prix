@@ -64,7 +64,7 @@ const Avis: React.FC<AvisProps> = ({ productId }) => {
   return (
     <div className="relative">
       <button
-        className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+        className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors"
         onClick={() => setShowFeedback(true)}
       >
         <FontAwesomeIcon icon={faPen} className="mr-2" />
@@ -88,7 +88,7 @@ const Avis: React.FC<AvisProps> = ({ productId }) => {
                   value={email}
                   onChange={handleEmailChange}
                   placeholder="Enter your email"
-                  className="w-full mt-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-300"
+                  className="w-full mt-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm transition-all duration-300"
                   disabled={isSubmitting}
                 />
                 {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
@@ -99,7 +99,7 @@ const Avis: React.FC<AvisProps> = ({ productId }) => {
                 placeholder="vos commentaires ici..."
                 className="w-full h-40 border border-gray-300 rounded-md p-2 resize-none transition-all duration-300"
               />
-              <button type="submit" className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors">
+              <button type="submit" className="mt-2 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors">
                 Envoyer
               </button>
             </form>

@@ -32,7 +32,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       return <FaCheckCircle className="text-green-500" size={20} />;
     } else if (['epuisé', 'horsstock', 'rupturedestock'].includes(availabilityLower)) {
       return <FaTimesCircle className="text-red-500" size={20} />;
-    } else if (['surcommmande', 'surcommande', 'enarrivage'].includes(availabilityLower)) {
+    } else if (['surcommande', 'surcommande48h', 'enarrivage'].includes(availabilityLower)) {
       return <FaCartPlus className="text-blue-500" size={20} />;
     } else {
       return null;
@@ -55,7 +55,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <h2 className="text-md font-semibold text-gray-800 truncate">{product.title}</h2>
           <p className="text-gray-600 text-xs mt-1 truncate">Category <span className="font-semibold text-primeColor">{product.categorie}</span></p>
           <div className="flex items-center justify-between mt-4">
-            <p className="text-red-600 truncate">Price</p>
+            <p className="text-red-600 truncate">Prix</p>
             <span className="text-md font-bold text-red-600"> {product.price.toFixed(3)} DT</span>
             <div className="flex space-x-2">
               {renderAvailabilityIcon()} {/* Render availability icon */}
@@ -67,13 +67,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
       </Link>
       {product.fournisseur && (
-        <div className="flex justify-center mt-2">
+        <div className="flex justify-between items-center mt-2 px-4">
           <Image
             src={fournisseurImage}
             alt={`${product.fournisseur} Logo`}
-            width={100}
+            width={80}
             height={50}
           />
+          <Link href={`/products/${product._id}`} className="block cursor-pointer">
+          <button className="bg-primary text-white py-1 px-1 rounded-md hover:bg-primary-dark focus:outline-none">
+            Comparer
+          </button>
+          </Link>
         </div>
       )}
     </div>

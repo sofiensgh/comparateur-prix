@@ -1,10 +1,12 @@
 "use client";
+"use client";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import ProductCards from "@/components/ProductCards";
 import LoadingComponent from "@/components/Loading";
 import PriceFilter from "@/components/PriceFilter";
+import ProductNotFound from "@/components/ProductNotFound";
 
 interface Product {
   _id: string;
@@ -130,27 +132,28 @@ export default function CategoryPage({
   const endPage = Math.min(totalPages, startPage + 2);
 
   return (
-    <div className="bg-gradient-to-r from-gray-100 via-white-500 to-white-500 flex flex-col md:flex-row min-h-screen">
-      <aside className="w-full md:w-1/4 p-4 bg-gray-200 sticky top-0 h-screen overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">Filters</h2>
-        <input
-          type="text"
-          placeholder="Enter brandId"
-          value={localBrandId || ""}
-          onChange={handleBrandIdInputChange}
-          className="border border-gray-300 rounded-md p-2 mb-4 mr-2" // Added mr-2 for margin
-        />
-        <button
-          onClick={handleFilterSubmit}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md" // Added styling for button
-        >
-          Apply Filter
-        </button>
-        <PriceFilter onFilterChange={handleFilterChange} />
-      </aside>
+    <div className="flex flex-col md:flex-row">
+  <aside className="w-full md:w-1/4 p-4 bg-gray-200 sticky md:top-0 md:h-screen overflow-y-auto md:overflow-y-scroll transition-all duration-300 ease-in-out mb-4 md:mb-0">
+    <h2 className="text-xl font-bold mb-4 text-center md:text-left">Filtres</h2>
+    <input
+      type="text"
+      placeholder="Entrez la marque"
+      value={localBrandId || ""}
+      onChange={handleBrandIdInputChange}
+      className="border border-gray-300 rounded-md p-2 mb-4 w-full transition duration-300 ease-in-out focus:border-blue-500 focus:outline-none"
+    />
+    <button
+      onClick={handleFilterSubmit}
+      className="px-4 py-2 bg-red-500 text-white rounded-md w-full hover:bg-red-600 focus:outline-none transition duration-300 ease-in-out"
+    >
+      Filtrez
+    </button>
+    <PriceFilter onFilterChange={handleFilterChange} />
+  </aside>
+
 
       <main className="w-full md:w-3/4 p-4">
-        <h1 className="text-2xl font-bold mb-8">{params.categorie} Products</h1>
+        <h1 className="text-2xl font-bold mb-8">{params.categorie} Produits</h1>
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <div className="spinner"></div>
@@ -158,7 +161,7 @@ export default function CategoryPage({
         ) : (
           <div>
             {currentPageData.length === 0 ? (
-              <div>No products found</div>
+              <div><ProductNotFound /></div>
             ) : (
               <div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -200,7 +203,7 @@ export default function CategoryPage({
                   )}
                 </div>
                 <div className="mt-4 text-center text-gray-600">
-                  Page {currentPage} of {totalPages}
+                  Page {currentPage} de {totalPages}
                 </div>
               </div>
             )}

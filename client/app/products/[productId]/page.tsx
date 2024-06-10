@@ -98,20 +98,24 @@ export default function ProductDetails({ params }: ProductProps) {
     <div className="bg-gradient-to-r from-gray-100 via-white-500 to-white-500 min-h-screen py-10">
       <div className="container mx-auto py-20 max-w-3xl ">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <Image
-              src={product.img || "/path/to/placeholder-image.jpg"}
-              alt="product image"
-              width={400}
-              height={400}
-              layout="responsive"
-              objectFit="cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "/path/to/placeholder-image.jpg";
-              }}
-            />
-          </div>
+        <div className="bg-white shadow-md rounded-lg overflow-hidden flex items-center justify-center">
+  <div className="w-2/4">
+    <Image
+      src={product.img || "/path/to/placeholder-image.jpg"}
+      alt="product image"
+      width={400}
+      height={400}
+      layout="responsive"
+      objectFit="cover"
+      className="transition-transform duration-300 hover:scale-105"
+      onError={(e) => {
+        (e.target as HTMLImageElement).src = "/path/to/placeholder-image.jpg";
+      }}
+    />
+  </div>
+</div>
+
+
           <div className="bg-white shadow-md rounded-lg p-4 md:p-6">
             <h1 className="text-xl font-bold mb-10">{product.title}</h1>
             <p className="text-gray-600 mb-2 text-m pb-7">{product.description}</p>

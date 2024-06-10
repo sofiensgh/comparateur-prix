@@ -35,7 +35,7 @@ const ErrorMessage = styled.p`
   animation: ${shakeAnimation} 0.5s ease infinite;
 `;
 
-const ProductNotFound: React.FC<{ message?: string }> = ({ message = "Product Not Found" }) => (
+const ProductNotFound: React.FC<{ message?: string }> = ({ message = "Produit non trouvé." }) => (
   <NotFoundContainer>
     <ErrorIcon />
     <ErrorMessage>{message}</ErrorMessage>

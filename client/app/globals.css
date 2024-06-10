@@ -516,5 +516,18 @@ body {
     width: 16rem; /* 64 */
   }
 }
+.animated-placeholder::-webkit-input-placeholder {
+  animation: placeholder-expand 0.5s forwards;
+}
 
+@keyframes placeholder-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-20%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 }

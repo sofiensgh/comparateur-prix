@@ -33,7 +33,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer }) => {
       return <FaCheckCircle className="text-green-500" size={20} />;
     } else if (["epuisé", "horsstock", "rupturedestock"].includes(availabilityLower)) {
       return <FaTimesCircle className="text-red-500" size={20} />;
-    } else if (["surcommande", "enarrivage"].includes(availabilityLower)) {
+    } else if (["surcommande", "enarrivage","surcommande48h"].includes(availabilityLower)) {
       return <FaCartPlus className="text-blue-500" size={20} />;
     } else {
       return null;
@@ -67,7 +67,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer }) => {
 
       {/* Button to view offer */}
       <Link href={offer.productUrl} className="w-full md:w-auto mt-4 md:mt-0">
-        <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-300 text-center md:text-left font-medium">
+        <button className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition-colors duration-300">
           Voir Offre
         </button>
       </Link>

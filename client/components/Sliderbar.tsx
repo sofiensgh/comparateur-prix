@@ -24,24 +24,24 @@ const Sliderbar: React.FC<SliderbarProps> = ({ isOpen, toggleSliderbar }) => {
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeydown);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeydown);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeydown);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeydown);
     };
-  }, [isOpen, toggleSliderbar]);
+  }, [toggleSliderbar]);
 
   useEffect(() => {
-    // Reset the sidebar state when the component is unmounted
-    return () => {
+    const handleBeforeUnload = () => {
       toggleSliderbar();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [toggleSliderbar]);
 
@@ -51,13 +51,13 @@ const Sliderbar: React.FC<SliderbarProps> = ({ isOpen, toggleSliderbar }) => {
       role="dialog"
       aria-modal="true"
       className={`fixed top-0 right-0 w-full h-full bg-black bg-opacity-50 z-40 flex justify-end ${
-        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      } transition-opacity duration-300 ease-out`}
+        isOpen ? 'opacity-100 transition-opacity duration-300 ease-out' : 'opacity-0 pointer-events-none'
+      }`}
     >
       <div
         className={`bg-white shadow-2xl w-full md:w-1/2 h-full flex flex-col justify-between transform ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        } transition-transform duration-300 ease-out`}
+          isOpen ? 'translate-x-0 transition-transform duration-300 ease-out' : 'translate-x-full'
+        }`}
       >
         <div className="relative">
           <button
@@ -80,9 +80,6 @@ const Sliderbar: React.FC<SliderbarProps> = ({ isOpen, toggleSliderbar }) => {
             </Link>
             <Link href="/about">
               <span className="text-xl font-medium hover:text-red-500 transition duration-300">About</span>
-            </Link>
-            <Link href="/products">
-              <span className="text-xl font-medium hover:text-red-500 transition duration-300">All products</span>
             </Link>
             <Link href="/categories">
               <span className="text-xl font-medium hover:text-red-500 transition duration-300">Categories</span>

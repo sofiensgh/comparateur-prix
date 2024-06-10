@@ -1,6 +1,6 @@
-"use client";
-import React from "react";
-import { useRouter } from "next/navigation";
+"use client"
+import React, { useState } from "react";
+import { useRouter } from "next/navigation"; // Changed from 'next/navigation'
 
 interface SearchInputProps {
   searchQuery: string;
@@ -12,44 +12,53 @@ const SearchInput: React.FC<SearchInputProps> = ({
   onSearchChange,
 }) => {
   const router = useRouter();
+  const [searchType, setSearchType] = useState("title");
 
   const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push(`/resultat?title=${searchQuery}`);
+    if (searchType === "reference") {
+      router.push(`/resultat?reference=${searchQuery}`);
+    } else if (searchType === "title") {
+      router.push(`/resultat1?title=${searchQuery}`);
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSearchSubmit}
-      className="relative block w-full sm:max-w-md"
-    >
-      <div className="flex items-center rounded-full bg-gray-200 px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 transition duration-300">
-        <svg
-          className="w-4 h-4 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
+    <form onSubmit={handleSearchSubmit} className="flex items-center space-x-4">
+      <div className="relative flex items-center bg-gray-100 rounded-md overflow-hidden">
+        <select
+          value={searchType}
+          onChange={(e) => setSearchType(e.target.value)}
+          className="px-3 py-2 bg-gray-100 text-gray-900 outline-none text-sm rounded-md appearance-none" // Removed max-width class and added appearance-none
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M21 21l-4.35-4.35M16 10a6 6 0 11-12 0 6 6 0 0112 0z"
-          />
-        </svg>
+          <option value="title">Titre</option>
+          <option value="reference">Référence</option>
+        </select>
         <input
           type="text"
           value={searchQuery}
           onChange={onSearchChange}
-          placeholder="Search..."
-          className="bg-transparent text-gray-900 flex-1 outline-none text-xs sm:text-sm"
+          placeholder="Recherche..."
+          className="px-3 py-2 bg-transparent text-gray-900 outline-none text-sm flex-1 focus:ring-2 focus:ring-primary transition duration-300" // Adjusted padding and added focus styles
         />
         <button
           type="submit"
-          className="bg-primary text-white rounded-full px-3 py-1.5 hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition duration-300 text-xs sm:text-sm"
+          className="bg-transparent text-gray-900 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition duration-300"
         >
-          Search
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
         </button>
       </div>
     </form>

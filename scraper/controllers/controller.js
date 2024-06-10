@@ -6,17 +6,23 @@ const stringSimilarity = require("string-similarity");
 //home
 exports.getAllProducts = async (req, res) => {
   try {
-    const electroTounesProducts = await ElectroTounesData.find().limit(10);
-    const myTekProducts = await MyTekData.find().limit(10);
-    const spaceNetProducts = await SpaceNetData.find().limit(10);
-    const tunisiaNetProducts = await TunisiaNetData.find().limit(10);
+    const categories = ['Telephonie', 'Informatique', 'TvAndSon']; // Add your category names
 
-    const allProducts = [
-      ...electroTounesProducts,
-      ...myTekProducts,
-      ...spaceNetProducts,
-      ...tunisiaNetProducts,
-    ];
+    const allProducts = [];
+
+    for (const category of categories) {
+      const electroTounesProduct = await ElectroTounesData.findOne({ categorie: category }).limit(1);
+      const myTekProduct = await MyTekData.findOne({ categorie: category }).limit(1);
+      const spaceNetProduct = await SpaceNetData.findOne({ categorie: category }).limit(1);
+      const tunisiaNetProduct = await TunisiaNetData.findOne({ categorie: category }).limit(1);
+
+      allProducts.push(
+        electroTounesProduct,
+        myTekProduct,
+        spaceNetProduct,
+        tunisiaNetProduct
+      );
+    }
 
     res.json(allProducts);
   } catch (error) {
@@ -24,6 +30,8 @@ exports.getAllProducts = async (req, res) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
+
+
 //categories
 exports.getProductsList = async (req, res) => {
   try {
@@ -272,25 +280,51 @@ exports.getStock = async (req, res) => {
   }
 };
 
-//resultat recherche
+//resultat recherche par reference
+
+const escapeRegExp = (string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
 
 exports.searchProducts = async (req, res) => {
   try {
-    const { title, page = 1, limit = 12 } = req.query;
+    const { search, page = 1, limit = 12, minPrice, maxPrice } = req.query;
 
-    console.log(`Received request for products with title: ${title}`);
+    console.log(`Received request for products with search term: ${search}`);
 
     let searchCriteria = {};
-    if (title) {
-      const keywords = title.split(/\s+/);
-      const regexPatterns = keywords.map((word) => new RegExp(word, "i"));
-      const regex = regexPatterns
-        .map((pattern) => `(?=.*${pattern.source})`)
-        .join("");
-      searchCriteria.title = new RegExp(regex, "i");
+
+    if (search) {
+      // Clean and escape the search term
+      const cleanedSearch = search.replace(/[-\/\.\s\[\]]/g, '');
+      const escapedSearch = escapeRegExp(cleanedSearch);
+
+      console.log(`Cleaned search term: ${cleanedSearch}`);
+      console.log(`Escaped search term: ${escapedSearch}`);
+
+      // Check if the search term is a reference
+      const isReference = /^[A-Z0-9]+$/.test(cleanedSearch);
+
+      console.log(`Is reference: ${isReference}`);
+
+      if (isReference) {
+        searchCriteria = { reference: new RegExp(escapedSearch, "i") };
+      } else {
+        searchCriteria = { title: new RegExp(escapedSearch, "i") };
+      }
     }
 
-    console.log(`Search criteria: ${JSON.stringify(searchCriteria)}`);
+    console.log(`Final search criteria: ${JSON.stringify(searchCriteria)}`);
+
+    if (minPrice !== undefined && maxPrice !== undefined) {
+      searchCriteria.price = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
+    } else if (minPrice !== undefined) {
+      searchCriteria.price = { $gte: parseInt(minPrice) };
+    } else if (maxPrice !== undefined) {
+      searchCriteria.price = { $lte: parseInt(maxPrice) };
+    }
+
+    console.log(`Final search criteria with price: ${JSON.stringify(searchCriteria)}`);
 
     const [
       electroTounesProducts,
@@ -298,19 +332,16 @@ exports.searchProducts = async (req, res) => {
       spaceNetProducts,
       tunisiaNetProducts,
     ] = await Promise.all([
-      ElectroTounesData.find(searchCriteria)
-        .limit(limit)
-        .skip((page - 1) * limit),
-      MyTekData.find(searchCriteria)
-        .limit(limit)
-        .skip((page - 1) * limit),
-      SpaceNetData.find(searchCriteria)
-        .limit(limit)
-        .skip((page - 1) * limit),
-      TunisiaNetData.find(searchCriteria)
-        .limit(limit)
-        .skip((page - 1) * limit),
+      ElectroTounesData.find(searchCriteria),
+      MyTekData.find(searchCriteria),
+      SpaceNetData.find(searchCriteria),
+      TunisiaNetData.find(searchCriteria),
     ]);
+
+    // console.log(`ElectroTounes products: ${JSON.stringify(electroTounesProducts)}`);
+    // console.log(`MyTek products: ${JSON.stringify(myTekProducts)}`);
+    // console.log(`SpaceNet products: ${JSON.stringify(spaceNetProducts)}`);
+    // console.log(`TunisiaNet products: ${JSON.stringify(tunisiaNetProducts)}`);
 
     const allProducts = [
       ...electroTounesProducts,
@@ -321,13 +352,8 @@ exports.searchProducts = async (req, res) => {
 
     console.log(`Total products found: ${allProducts.length}`);
 
-    if (allProducts.length === 0) {
-      console.log("No products found");
-      return res.status(404).json({ message: "No products found" });
-    }
-
-    const totalProducts = allProducts.length;
-    const totalPages = Math.ceil(totalProducts / limit);
+    const totalPages = Math.ceil(allProducts.length / limit);
+    const paginatedProducts = allProducts.slice((page - 1) * limit, page * limit);
 
     console.log(`Total pages: ${totalPages}`);
     console.log(`Current page: ${parseInt(page)}`);
@@ -335,14 +361,90 @@ exports.searchProducts = async (req, res) => {
     res.json({
       totalPages,
       currentPage: parseInt(page),
-      totalProducts,
-      products: allProducts,
+      totalProducts: allProducts.length,
+      products: paginatedProducts,
     });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ message: "Server Error", error });
   }
 };
+// search by title 
+exports.searchProductsByTitle = async (req, res) => {
+  try {
+    const { title, page = 1, limit = 12, minPrice, maxPrice } = req.query;
+
+    console.log(`Received request for products with search term (title): ${title}`);
+
+    let searchCriteria = {};
+
+    if (title) {
+      const escapedTitle = escapeRegExp(title);
+
+      console.log(`Escaped title: ${escapedTitle}`);
+
+      searchCriteria = { title: new RegExp(escapedTitle, "i") };
+    }
+
+    console.log(`Final search criteria (title): ${JSON.stringify(searchCriteria)}`);
+
+    if (minPrice !== undefined && maxPrice !== undefined) {
+      searchCriteria.price = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
+    } else if (minPrice !== undefined) {
+      searchCriteria.price = { $gte: parseInt(minPrice) };
+    } else if (maxPrice !== undefined) {
+      searchCriteria.price = { $lte: parseInt(maxPrice) };
+    }
+
+    console.log(`Final search criteria with price: ${JSON.stringify(searchCriteria)}`);
+
+    const [
+      electroTounesProducts,
+      myTekProducts,
+      spaceNetProducts,
+      tunisiaNetProducts,
+    ] = await Promise.all([
+      ElectroTounesData.find(searchCriteria),
+      MyTekData.find(searchCriteria),
+      SpaceNetData.find(searchCriteria),
+      TunisiaNetData.find(searchCriteria),
+    ]);
+
+    console.log(`ElectroTounes products: ${JSON.stringify(electroTounesProducts)}`);
+    console.log(`MyTek products: ${JSON.stringify(myTekProducts)}`);
+    console.log(`SpaceNet products: ${JSON.stringify(spaceNetProducts)}`);
+    console.log(`TunisiaNet products: ${JSON.stringify(tunisiaNetProducts)}`);
+
+    const allProducts = [
+      ...electroTounesProducts,
+      ...myTekProducts,
+      ...spaceNetProducts,
+      ...tunisiaNetProducts,
+    ];
+
+    console.log(`Total products found: ${allProducts.length}`);
+
+    const totalPages = Math.ceil(allProducts.length / limit);
+    const paginatedProducts = allProducts.slice((page - 1) * limit, page * limit);
+
+    console.log(`Total pages: ${totalPages}`);
+    console.log(`Current page: ${parseInt(page)}`);
+
+    res.json({
+      totalPages,
+      currentPage: parseInt(page),
+      totalProducts: allProducts.length,
+      products: paginatedProducts,
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ message: "Server Error", error });
+  }
+};
+
+
+
+///////////////////////////////
 
 exports.getProductsByCategory = async (req, res) => {
   try {

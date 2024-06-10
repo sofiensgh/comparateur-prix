@@ -15,9 +15,9 @@ export default function PriceFilter({ onFilterChange }: PriceFilterProps) {
 
   return (
     <div className="price-filter">
-      <h3 className="text-lg font-semibold mb-2">Price Filter</h3>
+      <h3 className="text-lg font-semibold mb-2">Filtrage par prix</h3>
       <div className="mb-2">
-        <label className="block mb-1">Min Price:</label>
+        <label className="block mb-1">Minimum prix:</label>
         <input
           type="number"
           value={minPrice}
@@ -28,7 +28,7 @@ export default function PriceFilter({ onFilterChange }: PriceFilterProps) {
         />
       </div>
       <div className="mb-2">
-        <label className="block mb-1">Max Price:</label>
+        <label className="block mb-1">Maximum prix:</label>
         <input
           type="number"
           value={maxPrice}
@@ -40,9 +40,9 @@ export default function PriceFilter({ onFilterChange }: PriceFilterProps) {
       </div>
       <button
         onClick={handleApplyFilter}
-        className="w-full bg-blue-500 text-white p-2 rounded"
+        className="px-4 py-2 bg-red-500 text-white rounded-md w-full hover:bg-red-600 focus:outline-none transition duration-300 ease-in-out"
       >
-        Apply Filter
+        Filter par prix
       </button>
     </div>
   );
