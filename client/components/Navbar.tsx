@@ -71,11 +71,11 @@ const Navbar = () => {
               </span>
             </Link>
           ))}
-          <Link href="/Login">
+          {/* <Link href="/Login">
             <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-300">
               Login
             </button>
-          </Link> 
+          </Link>  */}
         </div>
         <HiMenuAlt2 className="md:hidden cursor-pointer w-8 h-6" onClick={toggleSliderbar} />
         {sliderbarOpen && <Sliderbar isOpen={sliderbarOpen} toggleSliderbar={toggleSliderbar} />} 
