@@ -53,7 +53,7 @@ const Home = () => {
         <div className="flex max-xl:flex-col gap-16">
           <div className="flex flex-col justify-center">
             <h1 className="head-text">
-              Trouvez les meilleures prix en un clic sur <span className="text-primary">FlashPrix</span>
+              Trouvez les meilleures prix en un clic sur <span className="text-primary">BestBuy</span>
             </h1>
             <p className="mt-6">
               Notre comparateur de prix vous aide à économiser sur vos achats en ligne. Explorez, comparez, et faites des économies facilement. Découvrez l'art de magasiner malin avec nous !

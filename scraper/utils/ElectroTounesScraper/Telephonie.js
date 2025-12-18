@@ -3,157 +3,396 @@ const mongoose = require("mongoose");
 const ElectroTounesData = require("../../models/ElectroTounesModel");
 
 (async () => {
-  // Connect to MongoDB
-  await mongoose.connect(
-    "mongodb+srv://scrap:scrap123@scrapping.zid0882.mongodb.net/?retryWrites=true&w=majority&appName=Scrapping"
-  );
+  let browser;
+  let page;
 
-  const browser = await puppeteer.launch({
-    headless: false,
-    defaultViewport: null,
-  });
+  try {
+    // Connect to MongoDB
+    await mongoose.connect(
+      "mongodb+srv://scrap:scrap123@scrapping.zid0882.mongodb.net/?retryWrites=true&w=majority&appName=Scrapping"
+    );
 
-  const page = await browser.newPage();
-  await page.goto("https://electrotounes.tn/telephonie?page=1", {
-    waitUntil: "domcontentloaded",
-  });
+    browser = await puppeteer.launch({
+      headless: false,
+      defaultViewport: null,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process'
+      ]
+    });
 
-  // Initialize an empty array to store items
-  let newData = [];
+    page = await browser.newPage();
+    
+    // Set a longer timeout and better navigation options
+    await page.setDefaultNavigationTimeout(90000);
+    await page.setDefaultTimeout(60000);
 
-  while (true) {
-    const productsHandles = await page.$$(".ajax_block_product");
-    for (const productHandle of productsHandles) {
+    // Set a realistic user agent
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    let currentPage = 1;
+    const maxPages = 50;
+    let newData = [];
+    let consecutiveEmptyPages = 0;
+
+    while (currentPage <= maxPages && consecutiveEmptyPages < 3) {
+      console.log(`\n=== Scraping page ${currentPage} ===`);
+      
       try {
-        // Extract title using page.evaluate
-        const title = await productHandle.$eval(
-          ".product-meta > .list_box > h3.h3.product-title > a",
-          (el) => el.textContent.trim()
-        );
-        //extract price
-        const price = await productHandle.$eval(
-          ".product-meta > .product-price-and-shipping > span.price",
-          (el) => {
-            const priceString = el.textContent.trim().replace(/\s/g, ""); // Remove spaces
-            const priceParts = priceString.split(","); // Split by comma
-            const wholePart = priceParts[0].replace(".", ""); // Remove dots in the whole part
-            const decimalPart = priceParts[1]; // Keep the decimal part as is
-            const formattedPrice = `${wholePart}.${decimalPart}`; // Combine whole and decimal parts
-            const formattedNumber = parseFloat(
-              formattedPrice.replace(/,/g, "")
-            ); // Remove commas and parse as float
-            return !isNaN(formattedNumber) ? formattedNumber : null; // Check if it's a valid number
-          }
-        );
-        const referenceElement = await productHandle.$(".info-stock b");
-        const reference = referenceElement
-          ? await referenceElement.evaluate((el) =>
-              el.nextSibling.textContent.trim()
-            )
-          : "Reference not found";
-        //extract a description
-        const descriptionElement = await productHandle.$(".info-stock");
-        const description = descriptionElement
-          ? await descriptionElement.evaluate((el) => {
-              let text = el.textContent.trim();
-              // Remove "Réference" line and "Epuisé" line
-              text = text.replace(/Réference:\s+[^\n]+\n\s+Epuisé\n/, "");
-              // Replace remaining newline characters with spaces
-              text = text.replace(/\n/g, "");
-              // Remove extra spaces between sentences
-              text = text.replace(/\s+/g, " ");
-              return text;
-            })
-          : "Description not found";
-
-        // Extract availability with multiple conditions
-        let availability = "In stock"; // Default value
-        const inStockElement = await productHandle.$(
-          ".info-stock > .in-stock > .instock"
-        );
-        const laterStockElement = await productHandle.$(
-          ".info-stock > .in-stock > .outofstock"
-        );
-
-        if (inStockElement) {
-          availability = await inStockElement.evaluate((el) =>
-            el.textContent.trim()
-          );
-        } else if (laterStockElement) {
-          availability = await laterStockElement.evaluate((el) =>
-            el.textContent.trim()
-          );
-        } else {
-          availability = "Sur commande"; // Add more conditions as needed
-        }
-        //extract image
-
-        const img = await productHandle.$eval(
-          ".product-image a img.img-fluid",
-          (el) => el.getAttribute("src")
-        );
-        //extract url product
-        const productUrl = await productHandle.$eval(
-          ".product-image a", // Assuming the product URL is within an anchor tag inside "wb-image-block"
-          (el) => el.href.trim()
-        );
-        const categorie = "Telephonie";
-        // Create a new ScrapedData instance and save it to the database
-        try {
-          const newDataItem = new ElectroTounesData({
-            title: title,
-            price: price,
-            reference: reference,
-            description: description,
-            availability: availability,
-            img: img,
-            productUrl: productUrl,
-            categorie: categorie,
-          });
-          await newDataItem.save();
-          console.log("Saved to database:", newDataItem);
-          newData.push(newDataItem);
-        } catch (error) {
-          console.error(
-            "Error saving ScrapedData instance to database:",
-            error
-          );
-        }
-      } catch (error) {
-        console.error("Error extracting product details:", error);
-        // If there's an error, push a placeholder item into the newData array
-        newData.push({
-          title: "Error",
-          price: "Error",
-          reference: "Error",
-          description: "Error",
-          availability: "Error",
-          img: "Error",
-          productUrl: "Error",
-          categorie: "Error",
+        const url = `https://electrotounes.tn/telephonie?page=${currentPage}`;
+        console.log(`Navigating to: ${url}`);
+        
+        // Use page.evaluate for delay instead of waitForTimeout
+        await page.evaluate((delay) => {
+          return new Promise(resolve => setTimeout(resolve, delay));
+        }, Math.random() * 3000 + 2000);
+        
+        await page.goto(url, {
+          waitUntil: "domcontentloaded",
+          timeout: 60000
         });
+
+        // Wait for products to load
+        try {
+          await page.waitForSelector(".ajax_block_product", { timeout: 15000 });
+        } catch (e) {
+          console.log("Products not found with main selector, trying alternatives...");
+          // Try alternative product selectors
+          const altSelectors = ['.product-miniature', '.product', '.item-product', '.product-item'];
+          let productsFound = false;
+          
+          for (const selector of altSelectors) {
+            const elements = await page.$$(selector);
+            if (elements.length > 0) {
+              console.log(`Found ${elements.length} products with selector: ${selector}`);
+              productsFound = true;
+              break;
+            }
+          }
+          
+          if (!productsFound) {
+            console.log("No products found with any selector");
+            consecutiveEmptyPages++;
+            currentPage++;
+            continue;
+          }
+        }
+
+        const productsHandles = await page.$$(".ajax_block_product, .product-miniature, .product, .item-product, .product-item");
+        
+        if (productsHandles.length === 0) {
+          console.log("No products found on this page.");
+          consecutiveEmptyPages++;
+          currentPage++;
+          continue;
+        }
+
+        // Reset consecutive empty pages counter since we found products
+        consecutiveEmptyPages = 0;
+        
+        console.log(`Found ${productsHandles.length} products`);
+
+        let pageProductsSaved = 0;
+
+        for (const [index, productHandle] of productsHandles.entries()) {
+          console.log(`Processing product ${index + 1}/${productsHandles.length}`);
+          
+          let productData = {};
+          
+          try {
+            // Extract title
+            productData.title = await safeExtract(productHandle, [
+              ".product-meta > .list_box > h3.h3.product-title > a",
+              ".product-title a",
+              "h3 a",
+              ".product-meta h3 a",
+              "h2 a",
+              ".product-name a",
+              ".product-title > a",
+              "h3 > a",
+              ".product-meta a",
+              "a.product-name"
+            ], el => el.textContent.trim());
+
+            console.log(`Title: ${productData.title}`);
+
+            // Skip if title is error
+            if (!productData.title || productData.title === "Error") {
+              console.log("Skipping product - no title found");
+              continue;
+            }
+
+            // Extract price - try multiple approaches
+            productData.price = await extractPriceAdvanced(productHandle);
+            console.log(`Price: ${productData.price}`);
+
+            // Skip if price is error
+            if (!productData.price || productData.price === "Error") {
+              console.log("Skipping product - no price found");
+              continue;
+            }
+
+            // Extract reference
+            productData.reference = await safeExtract(productHandle, [
+              ".info-stock",
+              ".product-reference",
+              ".reference",
+              ".product-id"
+            ], el => {
+              const text = el.textContent.trim();
+              const refMatch = text.match(/R[ée]f[ée]rence:\s*([^\s\n\r]+)/i);
+              return refMatch ? refMatch[1].trim() : "Reference not found";
+            });
+
+            // Extract description
+            productData.description = await safeExtract(productHandle, [
+              ".info-stock",
+              ".product-description",
+              ".product-desc",
+              ".description",
+              ".product-short-desc"
+            ], el => {
+              let text = el.textContent.trim();
+              // Remove reference and stock info
+              text = text.replace(/R[ée]f[ée]rence:\s*[^\n\r]+/gi, "");
+              text = text.replace(/(En stock|Epuis[ée]|Sur commande|Stock|Availability)[^\n\r]*/gi, "");
+              text = text.replace(/\s+/g, " ").trim();
+              return text || "Description not found";
+            });
+
+            // Extract availability
+            productData.availability = await safeExtract(productHandle, [
+              ".info-stock > .in-stock > .instock",
+              ".info-stock > .in-stock > .outofstock", 
+              ".stock",
+              ".availability",
+              ".product-availability",
+              ".info-stock",
+              ".stock-available",
+              ".stock-unavailable"
+            ], el => {
+              const text = el.textContent.trim().toLowerCase();
+              if (text.includes('en stock') || text.includes('instock') || text.includes('available')) return "En stock";
+              if (text.includes('epuis') || text.includes('outofstock') || text.includes('unavailable')) return "Epuisé";
+              if (text.includes('commande') || text.includes('order')) return "Sur commande";
+              return "Sur commande";
+            });
+
+            // Extract image
+            productData.img = await safeExtract(productHandle, [
+              ".product-image a img.img-fluid",
+              ".product-image img",
+              "img",
+              ".product-thumbnail img",
+              "[itemprop='image']",
+              ".img-fluid",
+              "a img",
+              ".product-image img"
+            ], el => {
+              let src = el.getAttribute("src");
+              if (src && !src.startsWith('http')) {
+                src = `https://electrotounes.tn${src}`;
+              }
+              return src || "Image not found";
+            });
+
+            // Extract product URL
+            productData.productUrl = await safeExtract(productHandle, [
+              ".product-image a",
+              ".product-title a", 
+              "a",
+              ".product-thumbnail a",
+              ".product-name a",
+              "h3 a",
+              "a.product-link"
+            ], el => {
+              let href = el.getAttribute("href");
+              if (href && !href.startsWith('http')) {
+                href = `https://electrotounes.tn${href}`;
+              }
+              return href ? href.trim() : "URL not found";
+            });
+
+            productData.categorie = "Telephonie";
+            productData.fournisseur = "ElectroTounes";
+
+            // Check if product already exists in database to avoid duplicates
+            const existingProduct = await ElectroTounesData.findOne({
+              title: productData.title,
+              price: productData.price,
+              fournisseur: "ElectroTounes"
+            });
+
+            if (existingProduct) {
+              console.log(`Product already exists: ${productData.title}`);
+            } else {
+              try {
+                const newDataItem = new ElectroTounesData(productData);
+                await newDataItem.save();
+                console.log(`✓ Saved: ${productData.title} - ${productData.price} DT`);
+                newData.push(newDataItem);
+                pageProductsSaved++;
+              } catch (error) {
+                console.error("Error saving to database:", error.message);
+              }
+            }
+
+          } catch (error) {
+            console.error("Error extracting product:", error.message);
+            continue;
+          }
+        }
+
+        console.log(`Page ${currentPage}: Saved ${pageProductsSaved} new products`);
+
+        // Check if we should continue to next page
+        if (pageProductsSaved === 0 && currentPage > 5) {
+          console.log("No new products saved on this page, might have reached the end");
+          consecutiveEmptyPages++;
+        }
+
+        currentPage++;
+
+      } catch (error) {
+        console.log("Error processing page:", error.message);
+        
+        // If we get a navigation error, try to recover
+        if (error.message.includes('navigation') || error.message.includes('timeout')) {
+          console.log("Navigation error, waiting and retrying...");
+          await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 5000)));
+          consecutiveEmptyPages++;
+        } else {
+          break;
+        }
       }
     }
 
-    const nextPageButton = await page.$("li.current + li > a.js-search-link");
-    if (nextPageButton) {
-      // Click the next button using the evaluate method
-      await page.evaluate((btn) => {
-        btn.click();
-      }, nextPageButton);
+    console.log(`\n=== Scraping completed ===`);
+    console.log(`Reached page: ${currentPage - 1}`);
+    console.log(`Total items saved: ${newData.length}`);
+    
+    if (consecutiveEmptyPages >= 3) {
+      console.log("Stopped due to 3 consecutive empty pages.");
+    }
+    if (currentPage > maxPages) {
+      console.log("Reached maximum page limit.");
+    }
 
-      // Wait for navigation to complete
-      await page.waitForNavigation({ waitUntil: "domcontentloaded" });
-    } else {
-      console.log("Next page button not found. Exiting loop.");
-      break; // Exit the loop if there is no next page button
+  } catch (error) {
+    console.error("Fatal error:", error);
+  } finally {
+    // Ensure resources are properly closed
+    if (browser) {
+      await browser.close().catch(error => {
+        console.log("Error closing browser:", error.message);
+      });
+    }
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.close().catch(error => {
+        console.log("Error closing MongoDB connection:", error.message);
+      });
+    }
+  }
+})();
+
+// Safe extraction with multiple selectors
+async function safeExtract(elementHandle, selectors, extractFunction) {
+  for (const selector of selectors) {
+    try {
+      const result = await elementHandle.$eval(selector, extractFunction).catch(() => null);
+      if (result && result !== "Error" && result !== "not found" && result !== "") {
+        return result;
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+  return "Error";
+}
+
+// Advanced price extraction
+async function extractPriceAdvanced(productHandle) {
+  // Try multiple price selectors
+  const priceSelectors = [
+    ".product-meta > .product-price-and-shipping > span.price",
+    ".product-price-and-shipping .price",
+    ".price",
+    ".product-price",
+    ".current-price",
+    ".regular-price",
+    '[itemprop="price"]',
+    ".price.product-price",
+    ".product-price-content",
+    ".oe_currency_value",
+    ".new-price",
+    ".special-price",
+    ".price-final",
+    ".amount"
+  ];
+
+  for (const selector of priceSelectors) {
+    try {
+      const price = await productHandle.$eval(selector, (el) => {
+        let priceString = el.textContent.trim();
+        console.log(`Trying selector "${selector}": "${priceString}"`);
+        
+        // Clean the price string
+        priceString = priceString.replace(/\s/g, '')
+                                .replace(/[^\d,.-]/g, '')
+                                .replace(/,/g, '.');
+        
+        // Handle multiple dots (like 1.299.000)
+        const parts = priceString.split('.');
+        if (parts.length > 2) {
+          // If there are multiple dots, treat it as thousand separators
+          priceString = parts.slice(0, -1).join('') + '.' + parts[parts.length - 1];
+        }
+        
+        const priceValue = parseFloat(priceString);
+        console.log(`Parsed price: ${priceValue}`);
+        return !isNaN(priceValue) && priceValue > 0 ? priceValue : null;
+      }).catch(() => null);
+      
+      if (price) return price;
+    } catch (error) {
+      continue;
     }
   }
 
-  // Log the total number of items
-  console.log("Total items:", newData.length);
+  // Fallback: search for price in the entire product text
+  try {
+    const productText = await productHandle.evaluate(el => el.textContent).catch(() => "");
+    
+    // More flexible price regex
+    const priceRegex = /(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,3})?)\s*(?:DT|TND|دينار|€|EUR)?/g;
+    const priceMatches = productText.match(priceRegex);
+    
+    if (priceMatches) {
+      for (const match of priceMatches) {
+        const cleanMatch = match.replace(/[^\d,.]/g, '');
+        if (cleanMatch.length >= 2) {
+          let priceString = cleanMatch.replace(/[,\s]/g, '');
+          
+          // Handle the case where dot is used as thousand separator
+          if (priceString.split('.').length > 2) {
+            priceString = priceString.replace(/\./g, '');
+          } else {
+            priceString = priceString.replace(',', '.');
+          }
+          
+          const price = parseFloat(priceString);
+          if (!isNaN(price) && price > 1 && price < 100000) { // Reasonable price range
+            console.log(`Found price via regex: ${price}`);
+            return price;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.log("Price regex fallback failed:", error.message);
+  }
 
-  // Close the browser and the MongoDB connection
-  await browser.close();
-  mongoose.connection.close();
-})();
+  return "Error";
+}

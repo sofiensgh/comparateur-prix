@@ -51,7 +51,7 @@ const Navbar = () => {
             />
           </Link>
           <p className="text-base sm:text-xl font-bold ">
-            Flash<span className='text-primary'>Prix</span> 
+            BEST<span className='text-primary'> BUY</span> 
           </p>
         </div>
         <div> 
