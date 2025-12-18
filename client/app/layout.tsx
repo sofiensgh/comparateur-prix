@@ -5,6 +5,7 @@ import SlideBar from "@/components/SlideBar";
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import { AuthProvider } from "./context/AuthContext"; // Add this import
 
 const inter = Inter({ subsets: ["latin"] });
 const spaceGrotesk = Space_Grotesk({
@@ -28,16 +29,18 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
-      <body>
-        <main>
-          <Navbar />
-          <SlideBar />
-          {/* <FavoritesSidebar /> */}
+      <body className={`${inter.className} ${spaceGrotesk.className}`}>
+        <AuthProvider> {/* Wrap everything with AuthProvider */}
+          <main>
+            <Navbar />
+            <SlideBar />
+            {/* <FavoritesSidebar /> */}
 
-          {children}
+            {children}
 
-          <Footer />
-        </main>
+            <Footer />
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );
