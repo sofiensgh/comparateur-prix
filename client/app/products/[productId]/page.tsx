@@ -2,15 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Avis from "@/components/Avis"; // Import the Avis component
+import Avis from "@/components/Avis";
 import { Product } from "../../../types";
-import OfferCard from "@/components/OfferCards"; // Import the corrected OfferCard component
+import OfferCard from "@/components/OfferCards";
 import LoadingComponent from "@/components/Loading";
 import ProductNotFound from "@/components/ProductNotFound";
-
-interface ProductProps {
-  params: { productId: string };
-}
+import { useParams } from "next/navigation";
 
 interface Offer {
   _id: string;
@@ -34,31 +31,54 @@ async function fetchProductDetails(
   productId: string
 ): Promise<ProductDetailsResponse | null> {
   try {
+    console.log(`🔍 Fetching product details for ID: ${productId}`);
+    
     const response = await fetch(
       `http://localhost:5000/api/product/${productId}`
     );
+    
+    console.log(`📊 API Response Status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      throw new Error("Network response was not ok");
+      const errorText = await response.text();
+      console.error(`❌ API Error: ${response.status}`, errorText);
+      throw new Error(`API Error ${response.status}: ${response.statusText}. Details: ${errorText.substring(0, 200)}`);
     }
+    
     const data = await response.json();
+    console.log("✅ API Response Data:", data);
     return data as ProductDetailsResponse;
+    
   } catch (error) {
-    console.error("Error fetching product details:", error);
+    console.error("❌ Error fetching product details:", error);
     return null;
   }
 }
 
-export default function ProductDetails({ params }: ProductProps) {
-  const { productId } = params;
-  const [productDetails, setProductDetails] =
-    useState<ProductDetailsResponse | null>(null);
+export default function ProductDetails() {
+  const params = useParams();
+  const productId = params.productId as string;
+  
+  const [productDetails, setProductDetails] = useState<ProductDetailsResponse | null>(null);
   const [availableOffersCount, setAvailableOffersCount] = useState(0);
   const [showAvailableOffers, setShowAvailableOffers] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProductDetails(productId).then((data) => {
-      setProductDetails(data);
-    });
+    if (productId) {
+      setIsLoading(true);
+      setError(null);
+      console.log(`🔄 Starting fetch for productId: ${productId}`);
+      
+      fetchProductDetails(productId).then((data) => {
+        if (data === null) {
+          setError("Failed to load product details. The product may not exist or the server is unavailable.");
+        }
+        setProductDetails(data);
+        setIsLoading(false);
+      });
+    }
   }, [productId]);
 
   useEffect(() => {
@@ -75,47 +95,67 @@ export default function ProductDetails({ params }: ProductProps) {
     setShowAvailableOffers(!showAvailableOffers);
   };
 
-  if (!productDetails) {
-    return <h1><LoadingComponent /></h1>;
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Product</h2>
+          <p className="text-gray-700 mb-4">{error}</p>
+          <div className="bg-yellow-50 p-4 rounded mb-4">
+            <p className="text-sm text-gray-600">
+              <strong>Debug Info:</strong> Product ID: {productId}
+            </p>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!productDetails || !productDetails.product) {
+    return <ProductNotFound />;
   }
 
   const { product, similarProducts } = productDetails;
 
-  if (!product) {
-    return <h1><ProductNotFound /></h1>;
-  }
-
   const filteredOffers = showAvailableOffers
-  ? similarProducts.filter(
-      (offer) => {
-        const availabilityLower = offer.availability.toLowerCase().replace(/\s+/g, '');
-        return availabilityLower === "enstock" || availabilityLower === "disponible";
-      }
-    )
-  : similarProducts;
+    ? similarProducts.filter(
+        (offer) => {
+          const availabilityLower = offer.availability.toLowerCase().replace(/\s+/g, '');
+          return availabilityLower === "enstock" || availabilityLower === "disponible";
+        }
+      )
+    : similarProducts;
 
   return (
     <div className="bg-gradient-to-r from-gray-100 via-white-500 to-white-500 min-h-screen py-10">
       <div className="container mx-auto py-20 max-w-3xl ">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white shadow-md rounded-lg overflow-hidden flex items-center justify-center">
-  <div className="w-2/4">
-    <Image
-      src={product.img || "/path/to/placeholder-image.jpg"}
-      alt="product image"
-      width={400}
-      height={400}
-      layout="responsive"
-      objectFit="cover"
-      className="transition-transform duration-300 hover:scale-105"
-      onError={(e) => {
-        (e.target as HTMLImageElement).src = "/path/to/placeholder-image.jpg";
-      }}
-    />
-  </div>
-</div>
-
-
+          <div className="bg-white shadow-md rounded-lg overflow-hidden flex items-center justify-center">
+            <div className="w-2/4">
+              <Image
+                src={product.img || "/path/to/placeholder-image.jpg"}
+                alt="product image"
+                width={400}
+                height={400}
+                layout="responsive"
+                objectFit="cover"
+                className="transition-transform duration-300 hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/path/to/placeholder-image.jpg";
+                }}
+              />
+            </div>
+          </div>
           <div className="bg-white shadow-md rounded-lg p-4 md:p-6">
             <h1 className="text-xl font-bold mb-10">{product.title}</h1>
             <p className="text-gray-600 mb-2 text-m pb-7">{product.description}</p>
@@ -154,13 +194,12 @@ export default function ProductDetails({ params }: ProductProps) {
           </div>
           {filteredOffers.length > 0 ? (
             filteredOffers.map((offer, index) => (
-              <OfferCard key={index} offer={offer} />
+              <OfferCard key={offer._id || index} offer={offer} />
             ))
           ) : (
             <p className="text-center text-gray-500">Aucune offre disponible.</p>
           )}
         </div>
-        {/* Avis container */}
         <div className="bg-white shadow-md rounded-lg p-4 md:p-6 mt-6">
           <h2 className="text-lg font-bold mb-2">Avis</h2>
           <p className="text-sm text-gray-600 mb-4">

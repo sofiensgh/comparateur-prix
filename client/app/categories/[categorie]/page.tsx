@@ -1,6 +1,5 @@
 "use client";
-"use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react"; // Added 'use' import
 import useSWR from "swr";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import ProductCards from "@/components/ProductCards";
@@ -18,7 +17,7 @@ interface Product {
   categorie: string;
   rate: number;
   availability: string;
-  brandId: string; // Added brandId field
+  brandId: string;
 }
 
 const fetcher = (url: string) =>
@@ -37,15 +36,18 @@ const fetcher = (url: string) =>
 export default function CategoryPage({
   params,
 }: {
-  params: { categorie: string };
+  params: Promise<{ categorie: string }>; // ✅ Changed to Promise
 }) {
+  // ✅ FIXED: Unwrap params using use() hook
+  const { categorie } = use(params);
+  
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const pageParam = searchParams.get("page");
   const minPriceParam = searchParams.get("minPrice");
   const maxPriceParam = searchParams.get("maxPrice");
-  const brandIdParam = searchParams.get("brandId"); // Add brandId parameter
+  const brandIdParam = searchParams.get("brandId");
 
   const [currentPage, setCurrentPage] = useState(
     pageParam ? parseInt(pageParam) : 1
@@ -56,19 +58,17 @@ export default function CategoryPage({
   const [maxPrice, setMaxPrice] = useState<number | null>(
     maxPriceParam ? parseInt(maxPriceParam) : null
   );
-  const [brandId, setBrandId] = useState<string | null>(brandIdParam); // Initialize brandId state
-  const [localBrandId, setLocalBrandId] = useState<string | null>(brandIdParam); // Local state for input
+  const [brandId, setBrandId] = useState<string | null>(brandIdParam);
+  const [localBrandId, setLocalBrandId] = useState<string | null>(brandIdParam);
 
   const productsPerPage = 12;
 
   const { data, error, isLoading } = useSWR(
-    `http://localhost:5000/api/productslist?categorie=${
-      params.categorie
-    }&page=${currentPage}&limit=${productsPerPage}${
+    `http://localhost:5000/api/productslist?categorie=${categorie}&page=${currentPage}&limit=${productsPerPage}${
       minPrice ? `&minPrice=${minPrice}` : ""
     }${maxPrice ? `&maxPrice=${maxPrice}` : ""}${
       brandId ? `&brandId=${encodeURIComponent(brandId)}` : ""
-    }`, // Include brandId parameter in fetcher URL
+    }`,
     fetcher
   );
 
@@ -79,7 +79,7 @@ export default function CategoryPage({
         minPrice !== null ? `&minPrice=${minPrice}` : ""
       }${maxPrice !== null ? `&maxPrice=${maxPrice}` : ""}${
         brandId !== null ? `&brandId=${brandId}` : ""
-      }` // Update router push to include brandId parameter
+      }`
     );
   };
 
@@ -91,7 +91,7 @@ export default function CategoryPage({
       `${pathname}?page=1&minPrice=${minPrice}&maxPrice=${maxPrice}${
         brandId !== null ? `&brandId=${brandId}` : ""
       }`
-    ); // Update router push to include brandId parameter
+    );
   };
 
   const handleBrandIdInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,7 +110,7 @@ export default function CategoryPage({
 
   useEffect(() => {
     setCurrentPage(pageParam ? parseInt(pageParam) : 1);
-  }, [params.categorie, pageParam]);
+  }, [categorie, pageParam]); // ✅ Changed params.categorie to categorie
 
   if (error) {
     console.error("Error fetching data:", error);
@@ -133,27 +133,26 @@ export default function CategoryPage({
 
   return (
     <div className="flex flex-col md:flex-row">
-  <aside className="w-full md:w-1/4 p-4 bg-gray-200 sticky md:top-0 md:h-screen overflow-y-auto md:overflow-y-scroll transition-all duration-300 ease-in-out mb-4 md:mb-0">
-    <h2 className="text-xl font-bold mb-4 text-center md:text-left">Filtres</h2>
-    <input
-      type="text"
-      placeholder="Entrez la marque"
-      value={localBrandId || ""}
-      onChange={handleBrandIdInputChange}
-      className="border border-gray-300 rounded-md p-2 mb-4 w-full transition duration-300 ease-in-out focus:border-blue-500 focus:outline-none"
-    />
-    <button
-      onClick={handleFilterSubmit}
-      className="px-4 py-2 bg-red-500 text-white rounded-md w-full hover:bg-red-600 focus:outline-none transition duration-300 ease-in-out"
-    >
-      Filtrez
-    </button>
-    <PriceFilter onFilterChange={handleFilterChange} />
-  </aside>
-
+      <aside className="w-full md:w-1/4 p-4 bg-gray-200 sticky md:top-0 md:h-screen overflow-y-auto md:overflow-y-scroll transition-all duration-300 ease-in-out mb-4 md:mb-0">
+        <h2 className="text-xl font-bold mb-4 text-center md:text-left">Filtres</h2>
+        <input
+          type="text"
+          placeholder="Entrez la marque"
+          value={localBrandId || ""}
+          onChange={handleBrandIdInputChange}
+          className="border border-gray-300 rounded-md p-2 mb-4 w-full transition duration-300 ease-in-out focus:border-blue-500 focus:outline-none"
+        />
+        <button
+          onClick={handleFilterSubmit}
+          className="px-4 py-2 bg-red-500 text-white rounded-md w-full hover:bg-red-600 focus:outline-none transition duration-300 ease-in-out"
+        >
+          Filtrez
+        </button>
+        <PriceFilter onFilterChange={handleFilterChange} />
+      </aside>
 
       <main className="w-full md:w-3/4 p-4">
-        <h1 className="text-2xl font-bold mb-8">{params.categorie} Produits</h1>
+        <h1 className="text-2xl font-bold mb-8">{categorie} Produits</h1> {/* ✅ Changed params.categorie to categorie */}
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <div className="spinner"></div>
