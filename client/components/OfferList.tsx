@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import OfferCard from "./OfferCards"; // Ensure this path is correct
+import OfferCard from "./OfferCard"; // Ensure this path is correct
 
 interface Offer {
   _id: string;

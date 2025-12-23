@@ -22,8 +22,8 @@ connectDB();
 app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 }));
 
 // Middleware
@@ -39,7 +39,15 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString(),
     message: "Server is running",
     database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-    port: PORT
+    port: PORT,
+    services: {
+      userAuth: "✅",
+      admin: "✅",
+      cart: "✅",
+      orders: "✅",
+      products: "✅",
+      email: "✅"
+    }
   });
 });
 
@@ -112,14 +120,82 @@ try {
   console.log("⚠️  Admin routes not loaded, using simple setup route");
 }
 
+// Try to load cart routes
+try {
+  const cartRoutes = require("./routes/cartRoutes");
+  app.use("/api/cart", cartRoutes);
+  console.log("✅ Cart routes loaded");
+} catch (error) {
+  console.log("⚠️  Cart routes not loaded:", error.message);
+}
+
+// Try to load order routes
+try {
+  const orderRoutes = require("./routes/orderRoutes");
+  app.use("/api/orders", orderRoutes);
+  console.log("✅ Order routes loaded");
+} catch (error) {
+  console.log("⚠️  Order routes not loaded:", error.message);
+}
+
+// Product routes from scraping
 app.use('/api/nodemailer', nodemailerRoutes);
+
+// ========== DATABASE INITIALIZATION ==========
+// Create Cart and Order collections if they don't exist
+const initializeCollections = async () => {
+  try {
+    // Check if Cart model exists
+    const cartCollectionExists = await mongoose.connection.db.listCollections({ name: 'carts' }).hasNext();
+    if (!cartCollectionExists) {
+      console.log("🛒 Creating Cart collection...");
+      const Cart = require("./models/CartModel");
+      await Cart.createCollection();
+      console.log("✅ Cart collection created");
+    } else {
+      console.log("✅ Cart collection already exists");
+    }
+
+    // Check if Order model exists
+    const orderCollectionExists = await mongoose.connection.db.listCollections({ name: 'orders' }).hasNext();
+    if (!orderCollectionExists) {
+      console.log("📦 Creating Order collection...");
+      const Order = require("./models/OrderModel");
+      await Order.createCollection();
+      console.log("✅ Order collection created");
+    } else {
+      console.log("✅ Order collection already exists");
+    }
+  } catch (error) {
+    console.log("⚠️  Collections initialization:", error.message);
+  }
+};
 
 // 404 handler
 app.use("*", (req, res) => {
   res.status(404).json({ 
     success: false,
     message: "Route not found",
-    requestedUrl: req.originalUrl
+    requestedUrl: req.originalUrl,
+    availableEndpoints: {
+      health: "GET /api/health",
+      test: "GET /api/test",
+      users: "POST /api/users/signup, POST /api/users/signin",
+      admin: "POST /api/admin/setup-first-admin",
+      cart: "GET /api/cart, POST /api/cart/add",
+      orders: "POST /api/orders/create, GET /api/orders/my-orders",
+      products: "GET /api/products"
+    }
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("🚨 Global error:", err.stack);
+  res.status(500).json({
+    success: false,
+    message: "Internal server error",
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
@@ -130,5 +206,8 @@ app.listen(PORT, () => {
   console.log(`🧪 Test route: http://localhost:5000/api/test`);
   console.log(`👤 User signup: POST http://localhost:5000/api/users/signup`);
   console.log(`👑 Create admin: POST http://localhost:5000/api/admin/setup-first-admin`);
+  console.log(`🛒 Cart: GET http://localhost:5000/api/cart (requires auth)`);
+  console.log(`📦 Orders: POST http://localhost:5000/api/orders/create (requires auth)`);
   console.log(`🔑 JWT_SECRET: ${process.env.JWT_SECRET ? "✓ Set" : "✗ NOT SET!"}`);
+  
 });

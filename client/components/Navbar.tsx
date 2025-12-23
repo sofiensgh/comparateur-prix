@@ -8,7 +8,8 @@ import { usePathname } from 'next/navigation';
 import SearchInput from './SearchInput';
 import Sliderbar from './Sliderbar';
 import { useAuth } from '@/app/context/AuthContext';
-import { FaUserCircle, FaCaretDown } from "react-icons/fa";
+import { useCart } from '@/app/context/CartContext';
+import { FaUserCircle, FaCaretDown, FaShoppingCart } from "react-icons/fa";
 import { FiLogOut, FiUser, FiSettings } from "react-icons/fi";
 
 const Navbar = () => {
@@ -20,6 +21,7 @@ const Navbar = () => {
   
   const pathname = usePathname();
   const { user, logout, isAuthenticated, loading, checkAuth } = useAuth();
+  const { cart } = useCart();
 
   const navBarList = [
     { title: "Home", link: "/" },
@@ -51,13 +53,20 @@ const Navbar = () => {
   const handleLogout = async () => {
     await logout();
     setUserMenuOpen(false);
-    // Force complete page reload to clear all state and cookies
     window.location.href = '/';
   };
 
   const getUserInitials = (username: string) => {
     return username.charAt(0).toUpperCase();
   };
+
+  // Calculate cart item count
+  const getCartItemCount = () => {
+    if (!cart || !cart.items) return 0;
+    return cart.items.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const cartItemCount = getCartItemCount();
 
   // Check auth on pathname change
   useEffect(() => {
@@ -79,6 +88,7 @@ const Navbar = () => {
             <div className="w-full h-10 bg-gray-200 rounded animate-pulse"></div>
           </div>
           <div className="hidden md:flex items-center gap-4">
+            <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
             <div className="w-20 h-10 bg-gray-200 rounded animate-pulse"></div>
           </div>
           <div className="w-8 h-6 bg-gray-200 rounded animate-pulse md:hidden"></div>
@@ -112,6 +122,21 @@ const Navbar = () => {
         </div>
         
         <div className="hidden md:flex items-center gap-4">
+          {/* Cart Icon - Standalone */}
+          <Link href="/cart" className="relative group mr-2">
+            <div className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center">
+              <FaShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-red-600 transition-colors" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-medium">
+                  {cartItemCount > 9 ? '9+' : cartItemCount}
+                </span>
+              )}
+              <span className="ml-2 text-sm font-medium hidden lg:inline text-gray-700">
+                Cart
+              </span>
+            </div>
+          </Link>
+          
           {navBarList.map((item) => (
             <Link href={item.link} key={item.link}>
               <span
@@ -171,6 +196,19 @@ const Navbar = () => {
                       </div>
                     </Link>
                     
+                    {/* Cart Link in dropdown */}
+                    <Link href="/cart">
+                      <div className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
+                        <FaShoppingCart className="w-4 h-4 mr-3 text-gray-400" />
+                        My Cart
+                        {cartItemCount > 0 && (
+                          <span className="ml-auto bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
+                            {cartItemCount}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                    
                     {user.role === 'admin' && (
                       <Link href="/admin">
                         <div className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
@@ -211,11 +249,23 @@ const Navbar = () => {
           )}
         </div>
         
-        {/* Mobile menu button */}
-        <HiMenuAlt2 
-          className="md:hidden cursor-pointer w-8 h-6 text-gray-700" 
-          onClick={toggleSliderbar} 
-        />
+        {/* Mobile menu button and mobile cart icon */}
+        <div className="flex items-center gap-4 md:hidden">
+          {/* Mobile Cart Icon */}
+          <Link href="/cart" className="relative">
+            <FaShoppingCart className="w-6 h-6 text-gray-700" />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-medium">
+                {cartItemCount > 9 ? '9+' : cartItemCount}
+              </span>
+            )}
+          </Link>
+          
+          <HiMenuAlt2 
+            className="cursor-pointer w-8 h-6 text-gray-700" 
+            onClick={toggleSliderbar} 
+          />
+        </div>
         
         {sliderbarOpen && (
           <Sliderbar 
@@ -224,6 +274,7 @@ const Navbar = () => {
             user={user}
             isAuthenticated={isAuthenticated}
             onLogout={handleLogout}
+            cartItemCount={cartItemCount}
           />
         )}
       </nav>

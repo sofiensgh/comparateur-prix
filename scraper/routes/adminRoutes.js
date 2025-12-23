@@ -1,3 +1,4 @@
+// backend/routes/adminRoutes.js
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/adminController");
@@ -12,22 +13,30 @@ router.use(adminMiddleware);
 
 // Dashboard
 router.get("/dashboard", adminController.getDashboardStats);
+router.get("/statistics", adminController.getUserStatistics);
 
 // User management
 router.get("/users", adminController.getAllUsers);
+router.get("/users/search/:query", adminController.searchUsers);
 router.get("/users/:id", adminController.getUserById);
+router.post("/users", adminController.createUser); // Create new user
+router.put("/users/:id/profile", adminController.updateUserProfile); // Update user profile
 router.put("/users/:id/role", adminController.updateUserRole);
-router.put("/users/:id/toggle-status", adminController.toggleUserStatus);
+router.put("/users/:id/activate", adminController.activateUser); // Activate user
+router.put("/users/:id/deactivate", adminController.deactivateUser); // Deactivate user
+router.put("/users/:id/toggle-status", adminController.toggleUserStatus); // For backward compatibility
+router.put("/users/:id/reset-password", adminController.resetUserPassword); // Reset password
+router.patch("/users/bulk-update", adminController.bulkUpdateUsers); // Bulk operations
 router.delete("/users/:id", adminController.deleteUser);
 
 // ============================================
 // ADMIN PROFILE MANAGEMENT (Separate from user management)
 // ============================================
 
-// Get admin's own profile (for admin dashboard)
+// Get admin's own profile
 router.get("/my-profile", async (req, res) => {
   try {
-    const admin = await User.findById(req.user._id).select('-password');
+    const admin = await User.findById(req.user.id).select('-password');
     
     if (!admin) {
       return res.status(404).json({ 
@@ -36,7 +45,7 @@ router.get("/my-profile", async (req, res) => {
       });
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       user: {
         id: admin._id,
@@ -61,14 +70,14 @@ router.get("/my-profile", async (req, res) => {
 router.put("/my-profile", async (req, res) => {
   try {
     const { username, email } = req.body;
-    const admin = await User.findById(req.user._id);
+    const admin = await User.findById(req.user.id);
 
     // Update username if provided and different
     if (username && username !== admin.username) {
       // Check if username is already taken
       const existingUser = await User.findOne({ 
         username: username,
-        _id: { $ne: req.user._id }
+        _id: { $ne: req.user.id }
       });
       
       if (existingUser) {
@@ -85,7 +94,7 @@ router.put("/my-profile", async (req, res) => {
       // Check if email is already taken
       const existingUser = await User.findOne({ 
         email: email,
-        _id: { $ne: req.user._id }
+        _id: { $ne: req.user.id }
       });
       
       if (existingUser) {
@@ -99,7 +108,7 @@ router.put("/my-profile", async (req, res) => {
 
     await admin.save();
     
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Admin profile updated successfully",
       user: {
@@ -130,7 +139,7 @@ router.put("/change-password", async (req, res) => {
       });
     }
 
-    const admin = await User.findById(req.user._id);
+    const admin = await User.findById(req.user.id);
     
     // Verify current password
     const isPasswordValid = await admin.comparePassword(currentPassword);
@@ -145,7 +154,7 @@ router.put("/change-password", async (req, res) => {
     admin.password = newPassword;
     await admin.save();
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Password changed successfully"
     });
@@ -164,10 +173,25 @@ router.put("/change-password", async (req, res) => {
 
 // Test admin route
 router.get("/test", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
-    message: "Admin route working!",
-    user: req.user
+    message: "Admin routes are working!",
+    user: {
+      id: req.user.id,
+      username: req.user.username,
+      role: req.user.role
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Health check
+router.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "healthy",
+    service: "admin-api",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
 });
 
